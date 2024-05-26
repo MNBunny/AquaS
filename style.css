@@ -121,7 +121,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 25px;
+    padding: 20px;
 }
 
 .card:first-child {
