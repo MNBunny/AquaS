@@ -41,7 +41,7 @@ body {
 /* ---------- SIDEBAR ---------- */
 #sidebar{
     grid-area: sidebar;
-    height: 100%;
+    height: 110%;
     background-color: #283449;
     overflow-y: auto;
     transition: all 0.5s;
