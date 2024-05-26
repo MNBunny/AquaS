@@ -1,3 +1,13 @@
+document.addEventListener("DOMContentLoaded", function() {
+  const menuIcon = document.querySelector('.menu-icon');
+  const sidebar = document.getElementById('sidebar');
+
+  menuIcon.addEventListener('click', function() {
+      sidebar.classList.toggle('sidebar-responsive');
+  });
+});
+
+
 // Import the functions you need from the SDKs you need
 
 // TODO: Add SDKs for Firebase products that you want to use
