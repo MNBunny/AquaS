@@ -9,7 +9,7 @@ body {
 .material-icons-outlined {
     vertical-align: middle;
     line-height: 1px;
-    font-size: 35px;
+    font-size: 25px;
 }
   
 .grid-container {
@@ -19,14 +19,14 @@ body {
     grid-template-areas:
       'sidebar header header header'
       'sidebar main main main';
-    height: 109vh;
+    height: 99vh;
 }
 
 
 /* ---------- HEADER ---------- */
 .header{
     grid-area: header;
-    height: 110%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -41,7 +41,7 @@ body {
 /* ---------- SIDEBAR ---------- */
 #sidebar{
     grid-area: sidebar;
-    height: 110%;
+    height: 100%;
     background-color: #283449;
     overflow-y: auto;
     transition: all 0.5s;
@@ -63,7 +63,7 @@ body {
 .sidebar-brand{
     margin-top: 15px;
     font-size: 17.5px;
-    font-weight: 700;
+    font-weight: 600;
     text-align: center;
 }
 
@@ -150,8 +150,8 @@ body {
 .charts{
     display: grid;
     grid-template-columns: 1fr;
-    gap: 10px;
-    margin-top: 10px;
+    gap: 15px;
+    margin-top: 15px;
 }
 
 .charts-card{
