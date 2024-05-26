@@ -150,14 +150,14 @@ body {
 .charts{
     display: grid;
     grid-template-columns: 1fr;
-    gap: 15px;
-    margin-top: 25px;
+    gap: 10px;
+    margin-top: 10px;
 }
 
 .charts-card{
     background-color: #263043;
     margin-bottom: 10px;
-    padding: 10px;
+    padding: 15px;
     box-sizing: border-box;
     -webkit-column-break-inside: avoid;
     border-radius: 5px;
