@@ -219,18 +219,14 @@ body {
         padding: 5px;
     }
 
-    .charts-card {
-        padding: 10px;
-    }
-    
     .charts {
-        grid-template-columns: 1fr;
-        gap: 10px;
+        margin-top: 20px;
     }
 
     .charts-card {
         padding: 10px;
-        box-sizing: border-box;
-        width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+        width: calc(100% - 20px); /* Adjust the width to match the margins of cards */
     }
 }
