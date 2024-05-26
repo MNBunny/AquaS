@@ -218,4 +218,19 @@ body {
     .card {
         padding: 5px;
     }
+
+    .charts-card {
+        padding: 10px;
+    }
+    
+    .charts {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .charts-card {
+        padding: 10px;
+        box-sizing: border-box;
+        width: 100%;
+    }
 }
