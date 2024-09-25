@@ -166,6 +166,54 @@ body {
     justify-content: center;
 }
 
+/* CSV Download Button Styles */
+.csv-download {
+    margin: 20px auto; /* Center the button */
+    text-align: center;
+    width: 100%; /* Full width for mobile */
+}
+
+.download-btn {
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+.download-btn:hover {
+    background-color: #45a049; /* Darker green */
+}
+
+/* Responsive styles for button */
+@media screen and (max-width: 992px) {
+    .download-btn {
+        width: 90%; /* Make it narrower on medium screens */
+        padding: 10px; /* Adjust padding for smaller screens */
+        font-size: 14px; /* Slightly smaller font size */
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .download-btn {
+        width: 80%; /* Adjust width for small screens */
+        font-size: 12px; /* Smaller font size for smaller devices */
+    }
+}
+
+@media screen and (max-width: 576px) {
+    .download-btn {
+        width: 100%; /* Full width for extra small screens */
+        font-size: 12px; /* Keep the font size small */
+    }
+}
+
 /* ---------- MEDIA QUERIES ---------- */
 
 /* Medium <= 992px */

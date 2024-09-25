@@ -1,124 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Document</title>
-        
-        <!-- Montserrat Font -->
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    
+    <!-- Montserrat Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-        <!-- Material Icons -->
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" >
-        
-        <!-- Custom CSS -->
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <div class="grid-container">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="grid-container">
 
-            <!-- Header -->
-            <header class="header">
-                <div class="menu-icon" onclick="openSidebar()">
-                  <span class="material-icons-outlined">menu</span>
-                </div>
-                <div class="header-left">
-                 <span class="material-icons-outlined">search</span>
-                </div>
-                <div class="header-right">
-                     <span class="material-icons-outlined">notifications</span>
-                     <span class="material-icons-outlined">email</span>
-                     <span class="material-icons-outlined">account_circle</span>
-                </div>
-            </header>
-            <!-- End Header -->
+        <!-- Header -->
+        <header class="header">
+            <div class="menu-icon" onclick="openSidebar()">
+                <span class="material-icons-outlined">menu</span>
+            </div>
+            <div class="header-left">
+                <span class="material-icons-outlined">search</span>
+            </div>
+            <div class="header-right">
+                <span class="material-icons-outlined">notifications</span>
+                <span class="material-icons-outlined">email</span>
+                <span class="material-icons-outlined">account_circle</span>
+            </div>
+        </header>
+        <!-- End Header -->
 
-            <!-- Sidebar -->
-            <aside id="sidebar">
-                <div class="sidebar-title">
-                    <div class="sidebar-brand">
+        <!-- Sidebar -->
+        <aside id="sidebar">
+            <div class="sidebar-title">
+                <div class="sidebar-brand">
                     Smart Water Management System
-                    </div>
-                    <span class="material-icons-outlined" onclick="closeSidebar()">close</span>
                 </div>
+                <span class="material-icons-outlined" onclick="closeSidebar()">close</span>
+            </div>
 
-                <ul class="sidebar-list">
+            <ul class="sidebar-list">
                 <li class="sidebar-list-item">
                     <a href="#" target="_blank">
                         <span class="material-icons-outlined">dashboard</span> Dashboard
                     </a>
-                    </li>
-                    <li class="sidebar-list-item">
+                </li>
+                <li class="sidebar-list-item">
                     <a href="#" target="_blank">
                         <span class="material-icons-outlined">cloud</span> Humidity
                     </a>
-                    </li>
-                    <li class="sidebar-list-item">
+                </li>
+                <li class="sidebar-list-item">
                     <a href="#" target="_blank">
                         <span class="material-icons-outlined">thermostat_auto</span> Temperature
                     </a>
-                    </li>
-                </ul>
-            </aside>
-            <!-- End Sidebar -->
+                </li>
+            </ul>
+        </aside>
+        <!-- End Sidebar -->
 
+        <!-- Main -->
+        <main class="main-container">
+            <div class="main-title">
+                <h2>DASHBOARD</h2>
+            </div>
 
-            <!-- Main -->
-            <main class="main-container">
-                <div class="main-title">
-                    <h2>DASHBOARD</h2>
+            <div class="main-cards">
+                <div class="card">
+                    <div class="card-inner">
+                        <h3>Soil Moisture</h3>
+                        <span class="material-icons-outlined">inventory_2</span>
+                    </div>
+                    <h1 class="value" id="soilMoisture">10%</h1>
                 </div>
 
-                <div class="main-cards">
-                    
-
-                    <div class="card">
-                        <div class="card-inner">
-                            <h3>Soil Moisture</h3>
-                            <span class="material-icons-outlined">inventory_2</span>
-                        </div>
-                        <h1 class="value" id="soilMoisture">10%</h1>
+                <div class="card">
+                    <div class="card-inner">
+                        <h3>Humidity</h3>
+                        <span class="material-icons-outlined">cloud</span>
                     </div>
-
-                    <div class="card">
-                        <div class="card-inner">
-                            <h3>Humidity</h3>
-                            <span class="material-icons-outlined">cloud</span>
-                        </div>
-                        <h1 class="value" id="humidity">10 &#8451;</h1>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-inner">
-                            <h3>Temperature</h3>
-                            <span class="material-icons-outlined">thermostat_auto</span>
-                        </div>
-                        <h1 class="value" id="temperature">10%</h1>
-                    </div>
+                    <h1 class="value" id="humidity">10 &#8451;</h1>
                 </div>
 
-                <div class="charts">
-                    <div class="charts-card">
-                        <h2 class="chart-title">Soil Moisture</h2>
-                        <canvas id="area-chart" width="400" height="120"></canvas>
+                <div class="card">
+                    <div class="card-inner">
+                        <h3>Temperature</h3>
+                        <span class="material-icons-outlined">thermostat_auto</span>
                     </div>
+                    <h1 class="value" id="temperature">10%</h1>
                 </div>
-            </main>
-            <!-- End Main -->
-            
-        </div>
+            </div>
 
-        <!-- Scripts -->
-        <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
-	    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.11.1/firebase-database.min.js"></script>
-        <!-- ApexCharts -->
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.35.5/apexcharts.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
-        <!-- Custom JS -->
-        <script src="main.js"></script>
-  
-    </body>
+            <div class="charts">
+                <div class="charts-card">
+                    <h2 class="chart-title">Soil Moisture</h2>
+                    <canvas id="area-chart" width="400" height="120"></canvas>
+                </div>
+            </div>
+
+            <!-- CSV Download Button -->
+            <div class="csv-download">
+                <button id="download-button" class="download-btn">Download CSV</button>
+            </div>
+        </main>
+        <!-- End Main -->
+        
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.11.1/firebase-database.min.js"></script>
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.35.5/apexcharts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <!-- Custom JS -->
+    <script src="main.js"></script>
+
+</body>
 </html>
