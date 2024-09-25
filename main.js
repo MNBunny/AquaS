@@ -1,20 +1,18 @@
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   const menuIcon = document.querySelector('.menu-icon');
   const sidebar = document.getElementById('sidebar');
+  const closeButton = document.querySelector('.close-button');
 
-  menuIcon.addEventListener('click', function() {
-      sidebar.classList.toggle('sidebar-responsive');
+  menuIcon.addEventListener('click', function () {
+    sidebar.classList.toggle('sidebar-responsive');
+  });
+
+  closeButton.addEventListener('click', function () {
+    sidebar.classList.remove('sidebar-responsive'); // Close the sidebar
   });
 });
 
-
-// Import the functions you need from the SDKs you need
-
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBdUTGzi9iQ3asge53BP3UfLALtBghNggQ",
   authDomain: "swmscp-9078d.firebaseapp.com",
@@ -25,96 +23,101 @@ const firebaseConfig = {
   measurementId: "G-J3V99FKKD5"
 };
 
-
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig)
-
-// getting reference to the database
+firebase.initializeApp(firebaseConfig);
 var database = firebase.database();
 
+// References to data
+var dataRefSoilMoisture = database.ref('SoilMoisture/Percent');
+var dataRefHumidity = database.ref('DHT/humidity');
+var dataRefTemperature = database.ref('DHT/temperature');
+var dataRefNPK = {
+  nitrogen: database.ref('NPK/nitrogen'),
+  phosphorus: database.ref('NPK/phosphorus'),
+  potassium: database.ref('NPK/potassium')
+};
 
-//getting reference to the data we want
-var dataRef1 = database.ref('SoilMoisture/Percent');
-var dataRef2 = database.ref('DHT/humidity');
-var dataRef3 = database.ref('DHT/temperature');
+// Fetch data for cards and chart
+function fetchData() {
+  // Soil Moisture for card
+  dataRefSoilMoisture.on('value', function (snapshot) {
+    var mois = snapshot.val();
+    document.getElementById("soilMoisture").innerHTML = mois + "%";
+    storeDataInFirebase('moisture', mois);
+  });
 
-//fetch the data
-dataRef1.on('value', function(getdata1) {
-  var mois = getdata1.val();
-  document.getElementById("soilMoisture").innerHTML = mois + "%";
-})
-dataRef2.on('value', function(getdata2){
-  var humi = getdata2.val();
-  document.getElementById('humidity').innerHTML = humi + "%";
-})
+  // Humidity for card
+  dataRefHumidity.on('value', function (snapshot) {
+    var humi = snapshot.val();
+    document.getElementById('humidity').innerHTML = humi + "%";
+    storeDataInFirebase('humidity', humi);
+  });
 
-dataRef3  .on('value', function(getdata3){
-  var temp = getdata3.val();
-  document.getElementById('temperature').innerHTML = temp + "&#8451;";
-})
+  // Temperature for card
+  dataRefTemperature.on('value', function (snapshot) {
+    var temp = snapshot.val();
+    document.getElementById('temperature').innerHTML = temp + "&#8451;";
+    storeDataInFirebase('temperature', temp);
+  });
 
-
-
-let soilMoisturePercent = [];
-let labels = [];
-
-dataRef1.on('value', function(getdata1) {
-  soilMoisturePercent = getdata1.val() || [];
-  updateChartData(areaChart, soilMoisturePercent);
-});
-
-function updateChartData(chart, newData) {
-  chart.data.datasets[0].data.push(newData);
-  chart.data.labels.push(new Date().toLocaleTimeString());
-  chart.update();
+  // NPK for chart
+  dataRefNPK.nitrogen.on('value', updateNPKChart);
+  dataRefNPK.phosphorus.on('value', updateNPKChart);
+  dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
-// Initial chart setup
+// Store data in Firebase for later retrieval
+function storeDataInFirebase(type, value) {
+  const timestamp = new Date().toISOString();
+  database.ref(`${type}/`).push({ value, timestamp });
+}
+
+// Chart setup
 const ctx = document.getElementById('area-chart').getContext('2d');
 const areaChart = new Chart(ctx, {
   type: 'line',
   data: {
     labels: [],
-    datasets: [{
-      label: 'Moisture Level',
-      data: [],
-      backgroundColor: 'rgba(0, 171, 87, 0.4)',
-      borderColor: 'rgba(0, 171, 87, 1)',
-      borderWidth: 1,
-      fill: true,
-      tension: 0.2
-    }]
+    datasets: [
+      {
+        label: 'Nitrogen',
+        data: [],
+        backgroundColor: 'rgba(255, 99, 132, 0.4)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        fill: true
+      },
+      {
+        label: 'Phosphorus',
+        data: [],
+        backgroundColor: 'rgba(54, 162, 235, 0.4)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        fill: true
+      },
+      {
+        label: 'Potassium',
+        data: [],
+        backgroundColor: 'rgba(75, 192, 192, 0.4)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        fill: true
+      }
+    ]
   },
   options: {
     responsive: true,
     scales: {
       y: {
         beginAtZero: true,
-        ticks: {
-          color: '#f5f7ff'
-        },
-        title: {
-          display: true,
-          text: 'Moisture Level',
-          color: '#f5f7ff'
-        }
+        ticks: { color: '#f5f7ff' },
+        title: { display: true, text: 'Nutrient Level (ppm)', color: '#f5f7ff' }
       },
       x: {
-        ticks: {
-          color: '#f5f7ff'
-        },
-        title: {
-          display: true,
-          text: 'Time',
-          color: '#f5f7ff'
-        }
+        ticks: { color: '#f5f7ff' },
+        title: { display: true, text: 'Time', color: '#f5f7ff' }
       }
     },
     plugins: {
       legend: {
-        labels: {
-          color: '#f5f7ff'
-        }
+        labels: { color: '#f5f7ff' }
       },
       zoom: {
         pan: {
@@ -129,3 +132,62 @@ const areaChart = new Chart(ctx, {
     }
   }
 });
+
+// Update chart with NPK data
+function updateNPKChart(snapshot) {
+  var dataKey = snapshot.ref.key;
+  var value = snapshot.val();
+  var timestamp = new Date().toLocaleString();
+
+  if (dataKey === 'nitrogen') {
+    areaChart.data.datasets[0].data.push(value);
+  } else if (dataKey === 'phosphorus') {
+    areaChart.data.datasets[1].data.push(value);
+  } else if (dataKey === 'potassium') {
+    areaChart.data.datasets[2].data.push(value);
+  }
+
+  areaChart.data.labels.push(timestamp);
+  areaChart.update();
+}
+
+// Fetch historical data
+function fetchHistoricalData() {
+  const types = ['nitrogen', 'phosphorus', 'potassium'];
+  types.forEach(type => {
+    database.ref(`NPK/${type}`).once('value', function(snapshot) {
+      snapshot.forEach(function(childSnapshot) {
+        let data = childSnapshot.val();
+        updateNPKChart({ ref: { key: type }, val: () => data.value });
+      });
+    });
+  });
+}
+
+// Download data as CSV
+function downloadData() {
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += "Timestamp,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
+
+  database.ref('/').once('value', function(snapshot) {
+    snapshot.forEach(function(childSnapshot) {
+      const data = childSnapshot.val();
+      csvContent += `${data.timestamp || ''},${data.moisture || ''},${data.humidity || ''},${data.temperature || ''},${data.nitrogen || ''},${data.phosphorus || ''},${data.potassium || ''}\n`;
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "Sensor_Datasets.csv");
+    document.body.appendChild(link);
+    link.click();
+  });
+}
+
+// Call functions on page load
+fetchData();
+fetchHistoricalData();
+
+// Add event listener for CSV download
+document.getElementById('download-button').addEventListener('click', downloadData);
+
