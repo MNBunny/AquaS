@@ -109,18 +109,25 @@ body {
     transition: transform 0.3s ease; /* Smooth transition */
 }
 
-/* Ensure the close button is clearly visible */
 .close-button {
     position: absolute; /* Position it within the sidebar */
     top: 10px; /* Space from the top */
     right: 10px; /* Space from the right */
     z-index: 101; /* Higher z-index to be clickable */
-    background-color: #f44336; /* Red close button */
+    background-color: transparent; /* Make background transparent */
     color: white;
     border: none;
     cursor: pointer;
     border-radius: 50%; /* Circular button */
     padding: 5px 10px; /* Padding for better size */
+    box-shadow: none; /* Remove any shadows to avoid excess visibility */
+    display: none; /* Hide by default */
+}
+
+/* Show close button when sidebar is responsive */
+.sidebar-responsive .close-button {
+    display: block; /* Show close button when sidebar is opened */
+    background-color: #f44336; /* Red close button */
 }
 
 /* ---------- MAIN ---------- */
