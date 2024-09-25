@@ -99,9 +99,28 @@ body {
 }
 
 .sidebar-responsive {
-    display: inline !important;
-    position: absolute;
-    z-index: 12 !important;
+    display: block !important; /* Ensure it displays */
+    position: fixed; /* Change to fixed for better responsiveness */
+    top: 0;
+    left: 0;
+    width: 260px; /* Fixed width */
+    height: 100vh; /* Full height */
+    z-index: 100; /* Ensure it is above other elements */
+    transition: transform 0.3s ease; /* Smooth transition */
+}
+
+/* Ensure the close button is clearly visible */
+.close-button {
+    position: absolute; /* Position it within the sidebar */
+    top: 10px; /* Space from the top */
+    right: 10px; /* Space from the right */
+    z-index: 101; /* Higher z-index to be clickable */
+    background-color: #f44336; /* Red close button */
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 50%; /* Circular button */
+    padding: 5px 10px; /* Padding for better size */
 }
 
 /* ---------- MAIN ---------- */

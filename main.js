@@ -1,9 +1,14 @@
 document.addEventListener("DOMContentLoaded", function () {
   const menuIcon = document.querySelector('.menu-icon');
   const sidebar = document.getElementById('sidebar');
+  const closeButton = document.querySelector('.close-button');
 
   menuIcon.addEventListener('click', function () {
     sidebar.classList.toggle('sidebar-responsive');
+  });
+
+  closeButton.addEventListener('click', function () {
+    sidebar.classList.remove('sidebar-responsive'); // Close the sidebar
   });
 });
 
@@ -77,22 +82,22 @@ const areaChart = new Chart(ctx, {
       {
         label: 'Nitrogen',
         data: [],
-        backgroundColor: 'rgba(0, 0, 255, 0.4)',
-        borderColor: 'rgba(0, 0, 255, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.4)',
+        borderColor: 'rgba(255, 99, 132, 1)',
         fill: true
       },
       {
         label: 'Phosphorus',
         data: [],
-        backgroundColor: 'rgba(255, 165, 0, 0.4)',
-        borderColor: 'rgba(255, 165, 0, 1)',
+        backgroundColor: 'rgba(54, 162, 235, 0.4)',
+        borderColor: 'rgba(54, 162, 235, 1)',
         fill: true
       },
       {
         label: 'Potassium',
         data: [],
-        backgroundColor: 'rgba(0, 128, 0, 0.4)',
-        borderColor: 'rgba(0, 128, 0, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.4)',
+        borderColor: 'rgba(75, 192, 192, 1)',
         fill: true
       }
     ]
