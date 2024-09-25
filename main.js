@@ -22,54 +22,80 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 var database = firebase.database();
 
-// Getting reference to the data
-var dataRef1 = database.ref('SoilMoisture/Percent');
-var dataRef2 = database.ref('DHT/humidity');
-var dataRef3 = database.ref('DHT/temperature');
+// References to data
+var dataRefSoilMoisture = database.ref('SoilMoisture/Percent');
+var dataRefHumidity = database.ref('DHT/humidity');
+var dataRefTemperature = database.ref('DHT/temperature');
+var dataRefNPK = {
+  nitrogen: database.ref('NPK/nitrogen'),
+  phosphorus: database.ref('NPK/phosphorus'),
+  potassium: database.ref('NPK/potassium')
+};
 
-// Fetch data for display and chart
+// Fetch data for cards and chart
 function fetchData() {
-  dataRef1.on('value', function (getdata1) {
-    var mois = getdata1.val();
+  // Soil Moisture for card
+  dataRefSoilMoisture.on('value', function (snapshot) {
+    var mois = snapshot.val();
     document.getElementById("soilMoisture").innerHTML = mois + "%";
-    updateChartData(areaChart, mois);
     storeDataInFirebase('moisture', mois);
   });
 
-  dataRef2.on('value', function (getdata2) {
-    var humi = getdata2.val();
+  // Humidity for card
+  dataRefHumidity.on('value', function (snapshot) {
+    var humi = snapshot.val();
     document.getElementById('humidity').innerHTML = humi + "%";
     storeDataInFirebase('humidity', humi);
   });
 
-  dataRef3.on('value', function (getdata3) {
-    var temp = getdata3.val();
+  // Temperature for card
+  dataRefTemperature.on('value', function (snapshot) {
+    var temp = snapshot.val();
     document.getElementById('temperature').innerHTML = temp + "&#8451;";
     storeDataInFirebase('temperature', temp);
   });
+
+  // NPK for chart
+  dataRefNPK.nitrogen.on('value', updateNPKChart);
+  dataRefNPK.phosphorus.on('value', updateNPKChart);
+  dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
-// Store data for the past 3 months
+// Store data in Firebase for later retrieval
 function storeDataInFirebase(type, value) {
   const timestamp = new Date().toISOString();
   database.ref(`${type}/`).push({ value, timestamp });
 }
 
-// Initial chart setup
+// Chart setup
 const ctx = document.getElementById('area-chart').getContext('2d');
 const areaChart = new Chart(ctx, {
   type: 'line',
   data: {
     labels: [],
-    datasets: [{
-      label: 'Moisture Level',
-      data: [],
-      backgroundColor: 'rgba(0, 171, 87, 0.4)',
-      borderColor: 'rgba(0, 171, 87, 1)',
-      borderWidth: 1,
-      fill: true,
-      tension: 0.2
-    }]
+    datasets: [
+      {
+        label: 'Nitrogen',
+        data: [],
+        backgroundColor: 'rgba(0, 0, 255, 0.4)',
+        borderColor: 'rgba(0, 0, 255, 1)',
+        fill: true
+      },
+      {
+        label: 'Phosphorus',
+        data: [],
+        backgroundColor: 'rgba(255, 165, 0, 0.4)',
+        borderColor: 'rgba(255, 165, 0, 1)',
+        fill: true
+      },
+      {
+        label: 'Potassium',
+        data: [],
+        backgroundColor: 'rgba(0, 128, 0, 0.4)',
+        borderColor: 'rgba(0, 128, 0, 1)',
+        fill: true
+      }
+    ]
   },
   options: {
     responsive: true,
@@ -77,7 +103,7 @@ const areaChart = new Chart(ctx, {
       y: {
         beginAtZero: true,
         ticks: { color: '#f5f7ff' },
-        title: { display: true, text: 'Moisture Level', color: '#f5f7ff' }
+        title: { display: true, text: 'Nutrient Level (ppm)', color: '#f5f7ff' }
       },
       x: {
         ticks: { color: '#f5f7ff' },
@@ -102,44 +128,61 @@ const areaChart = new Chart(ctx, {
   }
 });
 
-// Fetch historical data on page load
+// Update chart with NPK data
+function updateNPKChart(snapshot) {
+  var dataKey = snapshot.ref.key;
+  var value = snapshot.val();
+  var timestamp = new Date().toLocaleString();
+
+  if (dataKey === 'nitrogen') {
+    areaChart.data.datasets[0].data.push(value);
+  } else if (dataKey === 'phosphorus') {
+    areaChart.data.datasets[1].data.push(value);
+  } else if (dataKey === 'potassium') {
+    areaChart.data.datasets[2].data.push(value);
+  }
+
+  areaChart.data.labels.push(timestamp);
+  areaChart.update();
+}
+
+// Fetch historical data
 function fetchHistoricalData() {
-  dataRef1.once('value', function(snapshot) {
-    snapshot.forEach(function(childSnapshot) {
-      let data = childSnapshot.val();
-      areaChart.data.datasets[0].data.push(data.value);
-      areaChart.data.labels.push(new Date(data.timestamp).toLocaleString());
+  const types = ['nitrogen', 'phosphorus', 'potassium'];
+  types.forEach(type => {
+    database.ref(`NPK/${type}`).once('value', function(snapshot) {
+      snapshot.forEach(function(childSnapshot) {
+        let data = childSnapshot.val();
+        updateNPKChart({ ref: { key: type }, val: () => data.value });
+      });
     });
-    areaChart.update();
   });
 }
 
 // Download data as CSV
 function downloadData() {
   let csvContent = "data:text/csv;charset=utf-8,";
-  csvContent += "Timestamp,Moisture Level,Humidity,Temperature\n";
+  csvContent += "Timestamp,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
 
-  const types = ['moisture', 'humidity', 'temperature'];
-  types.forEach(type => {
-    database.ref(`${type}/`).once('value', function (snapshot) {
-      snapshot.forEach(function (childSnapshot) {
-        let data = childSnapshot.val();
-        csvContent += `${data.timestamp},${data.value},${data.humidity || ''},${data.temperature || ''}\n`;
-      });
+  database.ref('/').once('value', function(snapshot) {
+    snapshot.forEach(function(childSnapshot) {
+      const data = childSnapshot.val();
+      csvContent += `${data.timestamp || ''},${data.moisture || ''},${data.humidity || ''},${data.temperature || ''},${data.nitrogen || ''},${data.phosphorus || ''},${data.potassium || ''}\n`;
     });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "data.csv");
+    document.body.appendChild(link);
+    link.click();
   });
-
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "data.csv");
-  document.body.appendChild(link);
-  link.click();
 }
 
-// Call functions
+// Call functions on page load
 fetchData();
 fetchHistoricalData();
 
-// Add an event listener for downloading data
+// Add event listener for CSV download
 document.getElementById('download-button').addEventListener('click', downloadData);
+
