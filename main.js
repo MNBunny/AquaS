@@ -178,7 +178,7 @@ function downloadData() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "data.csv");
+    link.setAttribute("download", "Sensor_Datasets.csv");
     document.body.appendChild(link);
     link.click();
   });
