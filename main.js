@@ -169,20 +169,32 @@ function downloadData() {
   let csvContent = "data:text/csv;charset=utf-8,";
   csvContent += "Timestamp,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
 
+  // Log Firebase data retrieval steps
+  console.log("Attempting to fetch data from Firebase...");
+
   // Retrieve Soil Moisture historical data
   database.ref('SoilMoisture').once('value', function(snapshotSoilMoisture) {
+    console.log("Soil Moisture data retrieved:", snapshotSoilMoisture.val());
+
     snapshotSoilMoisture.forEach(function(childSnapshot) {
       const soilData = childSnapshot.val();
+      console.log("Soil Data:", soilData);
 
       // Retrieve DHT (Humidity and Temperature) historical data
       database.ref('DHT').once('value', function(snapshotDHT) {
+        console.log("DHT data retrieved:", snapshotDHT.val());
+
         snapshotDHT.forEach(function(dhtSnapshot) {
           const dhtData = dhtSnapshot.val();
+          console.log("DHT Data:", dhtData);
 
           // Retrieve NPK historical data
           database.ref('NPK').once('value', function(snapshotNPK) {
+            console.log("NPK data retrieved:", snapshotNPK.val());
+
             snapshotNPK.forEach(function(npkSnapshot) {
               const npkData = npkSnapshot.val();
+              console.log("NPK Data:", npkData);
 
               // Construct a CSV row with the retrieved data
               let row = `${soilData.timestamp || ''},${soilData.Percent || ''},${dhtData.humidity || ''},${dhtData.temperature || ''},${npkData.nitrogen || ''},${npkData.phosphorus || ''},${npkData.potassium || ''}\n`;
@@ -204,6 +216,7 @@ function downloadData() {
     link.click();
   });
 }
+
 
 
 // Call functions on page load
