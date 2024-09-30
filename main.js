@@ -207,61 +207,41 @@ function downloadData() {
   let csvContent = "data:text/csv;charset=utf-8,";
   csvContent += "ID,Timestamp,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
 
-  // Log Firebase data retrieval steps
-  console.log("Attempting to fetch historical data from Firebase...");
-
+  // Define types of data to be fetched
   const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
 
-  let dataMap = {}; // Map to hold data based on the same ID (auto-incremented ID)
+  console.log("Attempting to fetch historical data from Firebase...");
 
-  // Use a promise to ensure all data is fetched before triggering the download
+  // Use a promise to ensure that all data is fetched before triggering the download
   let promises = [];
+  let aggregatedData = {};
 
   // Iterate over each type of data (moisture, humidity, etc.)
   types.forEach(type => {
     const promise = database.ref(`${type}/data`).once('value').then(snapshot => {
-      snapshot.forEach(function (childSnapshot) {
-        const id = childSnapshot.key;  // The auto-incremented ID
+      snapshot.forEach(childSnapshot => {
         const data = childSnapshot.val();
+        const id = childSnapshot.key;  // The auto-incremented ID
         const timestamp = data.timestamp || '';  // Timestamp for the data entry
 
-        // If the ID doesn't exist yet in the dataMap, create a new entry
-        if (!dataMap[id]) {
-          dataMap[id] = {
-            id: id,
-            timestamp: new Date(timestamp).toLocaleString('en-US', {
-              year: '2-digit', 
-              month: '2-digit', 
-              day: '2-digit', 
-              hour: '2-digit', 
-              minute: '2-digit', 
-              second: '2-digit'
-            }), // Format timestamp as MM/DD/YY HH:MM:SS
-            moisture: '',
-            humidity: '',
-            temperature: '',
-            nitrogen: '',
-            phosphorus: '',
-            potassium: ''
-          };
+        // Store each sensor's data under the corresponding ID
+        if (!aggregatedData[id]) {
+          aggregatedData[id] = { id, timestamp }; // Create a new entry for each ID
         }
-
-        // Populate the corresponding sensor value in the dataMap for that ID
-        dataMap[id][type] = data.value || '';
+        aggregatedData[id][type] = data.value; // Store the sensor value
       });
     });
     promises.push(promise);
   });
 
-  // After all data is fetched, create the CSV content
+  // After all data is fetched, trigger CSV download
   Promise.all(promises).then(() => {
-    // Iterate through the dataMap to build the CSV rows
-    for (const id in dataMap) {
-      let row = `${dataMap[id].id},${dataMap[id].timestamp},${dataMap[id].moisture},${dataMap[id].humidity},${dataMap[id].temperature},${dataMap[id].nitrogen},${dataMap[id].phosphorus},${dataMap[id].potassium}\n`;
-      csvContent += row;
+    for (const id in aggregatedData) {
+      const entry = aggregatedData[id];
+      const row = `${entry.id},${entry.timestamp},${entry.moisture || ''},${entry.humidity || ''},${entry.temperature || ''},${entry.nitrogen || ''},${entry.phosphorus || ''},${entry.potassium || ''}\n`;
+      csvContent += row; // Add the row to CSV content
     }
-
-    // Create a download link and trigger the CSV download
+    
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -272,6 +252,7 @@ function downloadData() {
     console.error("Error fetching data for CSV download:", error);
   });
 }
+
 
 
 // Call functions on page load
