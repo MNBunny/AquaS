@@ -13,17 +13,11 @@
 #define DHTPIN D4
 #define DHTTYPE DHT11
 #define SOIL_MOISTURE_PIN A0
-#define RELAY_PIN D3
 
 DHT dht(DHTPIN, DHTTYPE);
-//LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 #include "addons/TokenHelper.h"
 #include "addons/RTDBHelper.h"
-
-bool relayOn = false;
-unsigned long relayStartMillis = 0;
-const unsigned long relayOnDuration = 2 * 60 * 1000; // 2 minutes in milliseconds
 
 #define WIFI_SSID "GlobeAtHome_d7d38_2.4"
 #define WIFI_PASSWORD "Jy6YEfHQ"
@@ -44,9 +38,6 @@ void setup() {
   
   dht.begin();
   pinMode(DHTPIN, INPUT);
-
-  pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, LOW);
 
   Serial.print("Connecting to Wi-Fi");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -78,7 +69,9 @@ void setup() {
 }
 
 void loop() {
-  delay(10000);
+  //delay(10000); // 10-seconds delay
+  delay(600000); // 10-minute delay
+  //delay(1800000); // 30-minute delay
   
   float h = dht.readHumidity();
   float t = dht.readTemperature();
@@ -139,21 +132,5 @@ void loop() {
   }
 
   Serial.println("______________________________");
-
-  unsigned long currentMillis = millis();
-
-  if (soilMoisturePercent <= 20 && !relayOn) {
-    digitalWrite(RELAY_PIN, HIGH);
-    relayOn = true;
-    relayStartMillis = currentMillis;
-  }
-
-  if (relayOn && currentMillis - relayStartMillis >= relayOnDuration) {
-    digitalWrite(RELAY_PIN, LOW);
-    relayOn = false;
-  } else if (soilMoisturePercent >= 55) {
-    digitalWrite(RELAY_PIN, LOW);
-    relayOn = false;
-  }
 
 }
