@@ -66,10 +66,28 @@ function fetchData() {
   dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
-// Store data in Firebase for later retrieval
+// Store data in Firebase with auto-increment ID
 function storeDataInFirebase(type, value) {
   const timestamp = new Date().toISOString();
-  database.ref(`${type}/`).push({ value, timestamp });
+  
+  // Reference to the counter for the type
+  var counterRef = database.ref(`${type}/counter`);
+  
+  // Get the current count (auto-increment ID)
+  counterRef.transaction(function (currentValue) {
+    // Increment the counter or initialize it if it's the first value
+    return (currentValue || 0) + 1;
+  }).then(function (result) {
+    const newId = result.snapshot.val();  // Get the incremented ID
+    
+    // Store data with the new auto-incremented ID
+    database.ref(`${type}/data/${newId}`).set({ 
+      value, 
+      timestamp 
+    });
+  }).catch(function (error) {
+    console.log("Error incrementing counter:", error);
+  });
 }
 
 // Chart setup
@@ -151,73 +169,80 @@ function updateNPKChart(snapshot) {
   areaChart.update();
 }
 
-// Fetch historical data
+// Fetch historical data from stored records using auto-incremented IDs
 function fetchHistoricalData() {
-  const types = ['nitrogen', 'phosphorus', 'potassium'];
+  const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
+  
   types.forEach(type => {
-    database.ref(`NPK/${type}`).once('value', function(snapshot) {
-      snapshot.forEach(function(childSnapshot) {
+    // Retrieve all historical data stored under the 'data' key
+    database.ref(`${type}/data`).once('value', function (snapshot) {
+      snapshot.forEach(function (childSnapshot) {
         let data = childSnapshot.val();
-        updateNPKChart({ ref: { key: type }, val: () => data.value });
+        let timestamp = childSnapshot.key;  // The auto-incremented ID
+        
+        // Use the data for your purposes (display, chart, etc.)
+        console.log(`${type} at ${timestamp}:`, data);
+        
+        // For NPK data, we will need to update the chart
+        if (['nitrogen', 'phosphorus', 'potassium'].includes(type)) {
+          updateNPKChart({ ref: { key: type }, val: () => data.value });
+        }
       });
     });
   });
 }
 
-// Download data as CSV
+
+// Download all stored historical data as CSV, including auto-incremented ID
 function downloadData() {
   let csvContent = "data:text/csv;charset=utf-8,";
-  csvContent += "Timestamp,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
+  csvContent += "ID,Timestamp,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
 
+  // Define types of data to be fetched
+  const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
+  
   // Log Firebase data retrieval steps
-  console.log("Attempting to fetch data from Firebase...");
+  console.log("Attempting to fetch historical data from Firebase...");
 
-  // Retrieve Soil Moisture historical data
-  database.ref('SoilMoisture').once('value', function(snapshotSoilMoisture) {
-    console.log("Soil Moisture data retrieved:", snapshotSoilMoisture.val());
+  // Use a promise to ensure that all data is fetched before triggering the download
+  let promises = [];
 
-    snapshotSoilMoisture.forEach(function(childSnapshot) {
-      const soilData = childSnapshot.val();
-      console.log("Soil Data:", soilData);
+  // Iterate over each type of data (moisture, humidity, etc.)
+  types.forEach(type => {
+    const promise = database.ref(`${type}/data`).once('value').then(snapshot => {
+      snapshot.forEach(function (childSnapshot) {
+        const data = childSnapshot.val();
+        const id = childSnapshot.key;  // The auto-incremented ID
+        const timestamp = data.timestamp || '';  // Timestamp for the data entry
 
-      // Retrieve DHT (Humidity and Temperature) historical data
-      database.ref('DHT').once('value', function(snapshotDHT) {
-        console.log("DHT data retrieved:", snapshotDHT.val());
+        // Initialize variables for each sensor data type
+        let soilMoisture = (type === 'moisture') ? data.value || '' : '';
+        let humidity = (type === 'humidity') ? data.value || '' : '';
+        let temperature = (type === 'temperature') ? data.value || '' : '';
+        let nitrogen = (type === 'nitrogen') ? data.value || '' : '';
+        let phosphorus = (type === 'phosphorus') ? data.value || '' : '';
+        let potassium = (type === 'potassium') ? data.value || '' : '';
 
-        snapshotDHT.forEach(function(dhtSnapshot) {
-          const dhtData = dhtSnapshot.val();
-          console.log("DHT Data:", dhtData);
-
-          // Retrieve NPK historical data
-          database.ref('NPK').once('value', function(snapshotNPK) {
-            console.log("NPK data retrieved:", snapshotNPK.val());
-
-            snapshotNPK.forEach(function(npkSnapshot) {
-              const npkData = npkSnapshot.val();
-              console.log("NPK Data:", npkData);
-
-              // Construct a CSV row with the retrieved data
-              let row = `${soilData.timestamp || ''},${soilData.Percent || ''},${dhtData.humidity || ''},${dhtData.temperature || ''},${npkData.nitrogen || ''},${npkData.phosphorus || ''},${npkData.potassium || ''}\n`;
-
-              // Append the row to the CSV content
-              csvContent += row;
-            });
-          });
-        });
+        // Add a CSV row that includes the auto-incremented ID and all sensor values
+        let row = `${id},${timestamp},${soilMoisture},${humidity},${temperature},${nitrogen},${phosphorus},${potassium}\n`;
+        csvContent += row;
       });
     });
+    promises.push(promise);
+  });
 
-    // After all data is fetched and appended, trigger CSV download
+  // After all data is fetched, trigger CSV download
+  Promise.all(promises).then(() => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", "Sensor_Datasets.csv");
     document.body.appendChild(link);
     link.click();
+  }).catch(error => {
+    console.error("Error fetching data for CSV download:", error);
   });
 }
-
-
 
 // Call functions on page load
 fetchData();
@@ -225,4 +250,3 @@ fetchHistoricalData();
 
 // Add event listener for CSV download
 document.getElementById('download-button').addEventListener('click', downloadData);
-
