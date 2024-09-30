@@ -66,9 +66,18 @@ function fetchData() {
   dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
-// Store data in Firebase with auto-increment ID
+// Store data in Firebase with auto-increment ID and formatted timestamp
 function storeDataInFirebase(type, value) {
-  const timestamp = new Date().toISOString();
+  // Get current date and time and format it as MM/DD/YY HH:MM:SS
+  const timestamp = new Date().toLocaleString('en-US', {
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false  // Optional: Use 24-hour format (disable AM/PM)
+  });
   
   // Reference to the counter for the type
   var counterRef = database.ref(`${type}/counter`);
@@ -80,15 +89,16 @@ function storeDataInFirebase(type, value) {
   }).then(function (result) {
     const newId = result.snapshot.val();  // Get the incremented ID
     
-    // Store data with the new auto-incremented ID
+    // Store data with the new auto-incremented ID and formatted timestamp
     database.ref(`${type}/data/${newId}`).set({ 
       value, 
-      timestamp 
+      timestamp  // Save formatted timestamp here
     });
   }).catch(function (error) {
     console.log("Error incrementing counter:", error);
   });
 }
+
 
 // Chart setup
 const ctx = document.getElementById('area-chart').getContext('2d');
@@ -192,47 +202,66 @@ function fetchHistoricalData() {
   });
 }
 
-
 // Download all stored historical data as CSV, including auto-incremented ID
 function downloadData() {
   let csvContent = "data:text/csv;charset=utf-8,";
   csvContent += "ID,Timestamp,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
 
-  // Define types of data to be fetched
-  const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
-  
   // Log Firebase data retrieval steps
   console.log("Attempting to fetch historical data from Firebase...");
 
-  // Use a promise to ensure that all data is fetched before triggering the download
+  const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
+
+  let dataMap = {}; // Map to hold data based on the same ID (auto-incremented ID)
+
+  // Use a promise to ensure all data is fetched before triggering the download
   let promises = [];
 
   // Iterate over each type of data (moisture, humidity, etc.)
   types.forEach(type => {
     const promise = database.ref(`${type}/data`).once('value').then(snapshot => {
       snapshot.forEach(function (childSnapshot) {
-        const data = childSnapshot.val();
         const id = childSnapshot.key;  // The auto-incremented ID
+        const data = childSnapshot.val();
         const timestamp = data.timestamp || '';  // Timestamp for the data entry
 
-        // Initialize variables for each sensor data type
-        let soilMoisture = (type === 'moisture') ? data.value || '' : '';
-        let humidity = (type === 'humidity') ? data.value || '' : '';
-        let temperature = (type === 'temperature') ? data.value || '' : '';
-        let nitrogen = (type === 'nitrogen') ? data.value || '' : '';
-        let phosphorus = (type === 'phosphorus') ? data.value || '' : '';
-        let potassium = (type === 'potassium') ? data.value || '' : '';
+        // If the ID doesn't exist yet in the dataMap, create a new entry
+        if (!dataMap[id]) {
+          dataMap[id] = {
+            id: id,
+            timestamp: new Date(timestamp).toLocaleString('en-US', {
+              year: '2-digit', 
+              month: '2-digit', 
+              day: '2-digit', 
+              hour: '2-digit', 
+              minute: '2-digit', 
+              second: '2-digit'
+            }), // Format timestamp as MM/DD/YY HH:MM:SS
+            moisture: '',
+            humidity: '',
+            temperature: '',
+            nitrogen: '',
+            phosphorus: '',
+            potassium: ''
+          };
+        }
 
-        // Add a CSV row that includes the auto-incremented ID and all sensor values
-        let row = `${id},${timestamp},${soilMoisture},${humidity},${temperature},${nitrogen},${phosphorus},${potassium}\n`;
-        csvContent += row;
+        // Populate the corresponding sensor value in the dataMap for that ID
+        dataMap[id][type] = data.value || '';
       });
     });
     promises.push(promise);
   });
 
-  // After all data is fetched, trigger CSV download
+  // After all data is fetched, create the CSV content
   Promise.all(promises).then(() => {
+    // Iterate through the dataMap to build the CSV rows
+    for (const id in dataMap) {
+      let row = `${dataMap[id].id},${dataMap[id].timestamp},${dataMap[id].moisture},${dataMap[id].humidity},${dataMap[id].temperature},${dataMap[id].nitrogen},${dataMap[id].phosphorus},${dataMap[id].potassium}\n`;
+      csvContent += row;
+    }
+
+    // Create a download link and trigger the CSV download
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -243,6 +272,7 @@ function downloadData() {
     console.error("Error fetching data for CSV download:", error);
   });
 }
+
 
 // Call functions on page load
 fetchData();
