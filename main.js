@@ -66,11 +66,56 @@ function fetchData() {
   dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
-// Store data in Firebase for later retrieval
+// Store data in Firebase with auto-increment ID and formatted timestamp, only if it's different from the last stored value
 function storeDataInFirebase(type, value) {
-  const timestamp = new Date().toISOString();
-  database.ref(`${type}/`).push({ value, timestamp });
+  // Reference to the last saved data
+  var lastEntryRef = database.ref(`${type}/data`).orderByKey().limitToLast(1);
+
+  lastEntryRef.once('value', function (snapshot) {
+    let lastValue = null;
+    snapshot.forEach(function (childSnapshot) {
+      lastValue = childSnapshot.val().value;
+    });
+
+    // If the value is the same as the last saved value, do not save it again
+    if (lastValue === value) {
+      console.log(`${type} data is already up to date. Skipping storage.`);
+      return;
+    }
+
+    // Get current date and time and format it as MM/DD/YY HH:MM:SS
+    const timestamp = new Date().toLocaleString('en-US', {
+      year: '2-digit',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false  // Optional: Use 24-hour format (disable AM/PM)
+    });
+
+    // Reference to the counter for the type
+    var counterRef = database.ref(`${type}/counter`);
+
+    // Get the current count (auto-increment ID)
+    counterRef.transaction(function (currentValue) {
+      // Increment the counter or initialize it if it's the first value
+      return (currentValue || 0) + 1;
+    }).then(function (result) {
+      const newId = result.snapshot.val();  // Get the incremented ID
+
+      // Store data with the new auto-incremented ID and formatted timestamp
+      database.ref(`${type}/data/${newId}`).set({ 
+        value, 
+        timestamp  // Save formatted timestamp here
+      });
+    }).catch(function (error) {
+      console.log("Error incrementing counter:", error);
+    });
+  });
 }
+
+
 
 // Chart setup
 const ctx = document.getElementById('area-chart').getContext('2d');
@@ -151,29 +196,68 @@ function updateNPKChart(snapshot) {
   areaChart.update();
 }
 
-// Fetch historical data
+// Fetch historical data from stored records using auto-incremented IDs
 function fetchHistoricalData() {
-  const types = ['nitrogen', 'phosphorus', 'potassium'];
+  const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
+  
   types.forEach(type => {
-    database.ref(`NPK/${type}`).once('value', function(snapshot) {
-      snapshot.forEach(function(childSnapshot) {
+    // Retrieve all historical data stored under the 'data' key
+    database.ref(`${type}/data`).once('value', function (snapshot) {
+      snapshot.forEach(function (childSnapshot) {
         let data = childSnapshot.val();
-        updateNPKChart({ ref: { key: type }, val: () => data.value });
+        let timestamp = childSnapshot.key;  // The auto-incremented ID
+        
+        // Use the data for your purposes (display, chart, etc.)
+        console.log(`${type} at ${timestamp}:`, data);
+        
+        // For NPK data, we will need to update the chart
+        if (['nitrogen', 'phosphorus', 'potassium'].includes(type)) {
+          updateNPKChart({ ref: { key: type }, val: () => data.value });
+        }
       });
     });
   });
 }
 
-// Download data as CSV
+// Download all stored historical data as CSV, including auto-incremented ID
 function downloadData() {
   let csvContent = "data:text/csv;charset=utf-8,";
-  csvContent += "Timestamp,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
+  csvContent += "ID,Timestamp,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
 
-  database.ref('/').once('value', function(snapshot) {
-    snapshot.forEach(function(childSnapshot) {
-      const data = childSnapshot.val();
-      csvContent += `${data.timestamp || ''},${data.moisture || ''},${data.humidity || ''},${data.temperature || ''},${data.nitrogen || ''},${data.phosphorus || ''},${data.potassium || ''}\n`;
+  // Define types of data to be fetched
+  const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
+
+  console.log("Attempting to fetch historical data from Firebase...");
+
+  // Use a promise to ensure that all data is fetched before triggering the download
+  let promises = [];
+  let aggregatedData = {};
+
+  // Iterate over each type of data (moisture, humidity, etc.)
+  types.forEach(type => {
+    const promise = database.ref(`${type}/data`).once('value').then(snapshot => {
+      snapshot.forEach(childSnapshot => {
+        const data = childSnapshot.val();
+        const id = childSnapshot.key;  // The auto-incremented ID
+        const timestamp = data.timestamp || '';  // Timestamp for the data entry
+
+        // Store each sensor's data under the corresponding ID
+        if (!aggregatedData[id]) {
+          aggregatedData[id] = { id, timestamp }; // Create a new entry for each ID
+        }
+        aggregatedData[id][type] = data.value; // Store the sensor value
+      });
     });
+    promises.push(promise);
+  });
+
+  // After all data is fetched, trigger CSV download
+  Promise.all(promises).then(() => {
+    for (const id in aggregatedData) {
+      const entry = aggregatedData[id];
+      const row = `${entry.id},${entry.timestamp},${entry.moisture || ''},${entry.humidity || ''},${entry.temperature || ''},${entry.nitrogen || ''},${entry.phosphorus || ''},${entry.potassium || ''}\n`;
+      csvContent += row; // Add the row to CSV content
+    }
     
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -181,8 +265,12 @@ function downloadData() {
     link.setAttribute("download", "Sensor_Datasets.csv");
     document.body.appendChild(link);
     link.click();
+  }).catch(error => {
+    console.error("Error fetching data for CSV download:", error);
   });
 }
+
+
 
 // Call functions on page load
 fetchData();
@@ -190,4 +278,3 @@ fetchHistoricalData();
 
 // Add event listener for CSV download
 document.getElementById('download-button').addEventListener('click', downloadData);
-
