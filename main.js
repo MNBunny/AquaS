@@ -74,9 +74,12 @@ function storeDataInFirebase(type, value) {
 
   const sessionKey = `${type}-saved`;
 
-  // Prevent saving data on page refresh (session-based)
-  if (sessionStorage.getItem(sessionKey)) {
-    console.log(`Data for ${type} already saved this session. Skipping save.`);
+  // Check the last saved value from session storage
+  const lastSavedValue = sessionStorage.getItem(`${type}-last-value`);
+
+  // If the last saved value is the same as the current value, skip saving
+  if (lastSavedValue && lastSavedValue === value.toString()) {
+    console.log(`Duplicate value for ${type} detected. Skipping save.`);
     return;
   }
 
@@ -88,6 +91,10 @@ function storeDataInFirebase(type, value) {
     let exists = false;
     snapshot.forEach(function (childSnapshot) {
       let lastData = childSnapshot.val();
+      // Compare the last data value to the current one
+      if (lastData.value === value) {
+        exists = true;
+      }
     });
 
     if (!exists) {
@@ -106,6 +113,9 @@ function storeDataInFirebase(type, value) {
           date,
           time
         });
+
+        // Store the current value in session storage
+        sessionStorage.setItem(`${type}-last-value`, value.toString());
 
         // Mark data as saved in the session storage to avoid refresh save
         sessionStorage.setItem(sessionKey, true);
