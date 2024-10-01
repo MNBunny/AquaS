@@ -75,10 +75,10 @@ function storeDataInFirebase(type, value) {
   const sessionKey = `${type}-saved`;
 
   // Prevent saving data on page refresh (session-based)
-  //if (sessionStorage.getItem(sessionKey)) {
-  //  console.log(`Data for ${type} already saved this session. Skipping save.`);
-  //  return;
-  //}
+  if (sessionStorage.getItem(sessionKey)) {
+    console.log(`Data for ${type} already saved this session. Skipping save.`);
+    return;
+  }
 
   // Reference to the latest data for the type
   var lastEntryRef = database.ref(`${type}/data`).orderByKey().limitToLast(1);
