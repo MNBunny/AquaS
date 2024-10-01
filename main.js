@@ -88,14 +88,6 @@ function storeDataInFirebase(type, value) {
     let exists = false;
     snapshot.forEach(function (childSnapshot) {
       let lastData = childSnapshot.val();
-
-      // Check if the timestamp is within 10 minutes of the last saved time
-      let lastTime = new Date(`${lastData.date} ${lastData.time}`);
-      let timeDifference = (timestamp - lastTime) / (1000 * 60); // Time difference in minutes
-
-      if (lastData.value === value && timeDifference < 10) {
-        exists = true; // Skip saving if within the 10-minute window
-      }
     });
 
     if (!exists) {
