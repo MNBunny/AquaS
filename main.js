@@ -67,20 +67,17 @@ function fetchData() {
   dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
-// Store data in Firebase with verification to avoid saving on page refresh
 function storeDataInFirebase(type, value) {
-  // Get current date and time and format it as MM/DD/YY and time separately
   const timestamp = new Date();
   const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
   const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
 
-  // Use sessionStorage to track saved data per session
   const sessionKey = `${type}-saved`;
 
-  // Check if the data for this type has already been saved during this session
+  // Prevent saving data on page refresh (session-based)
   if (sessionStorage.getItem(sessionKey)) {
     console.log(`Data for ${type} already saved this session. Skipping save.`);
-    return; // Don't save again if the data has already been saved this session
+    return;
   }
 
   // Reference to the latest data for the type
@@ -91,29 +88,34 @@ function storeDataInFirebase(type, value) {
     let exists = false;
     snapshot.forEach(function (childSnapshot) {
       let lastData = childSnapshot.val();
-      if (lastData.value === value) {
-        exists = true; // If the new value matches the last stored value, don't save again
+
+      // Check if the timestamp is within 10 minutes of the last saved time
+      let lastTime = new Date(`${lastData.date} ${lastData.time}`);
+      let timeDifference = (timestamp - lastTime) / (1000 * 60); // Time difference in minutes
+
+      if (lastData.value === value && timeDifference < 10) {
+        exists = true; // Skip saving if within the 10-minute window
       }
     });
 
     if (!exists) {
-      // If the new value is different, store it with auto-incremented ID
+      // Store data with auto-incremented ID, date, and time
       var counterRef = database.ref(`${type}/counter`);
 
       // Get the current count (auto-increment ID)
       counterRef.transaction(function (currentValue) {
         return (currentValue || 0) + 1;
       }).then(function (result) {
-        const newId = result.snapshot.val();  // Get the incremented ID
-        
-        // Store data with the new auto-incremented ID, date, and time
-        database.ref(`${type}/data/${newId}`).set({ 
-          value, 
-          date, 
-          time  // Save date and time separately
+        const newId = result.snapshot.val();
+
+        // Store the new data with the auto-incremented ID, date, and time
+        database.ref(`${type}/data/${newId}`).set({
+          value,
+          date,
+          time
         });
 
-        // Mark this data as saved in the session storage
+        // Mark data as saved in the session storage to avoid refresh save
         sessionStorage.setItem(sessionKey, true);
       }).catch(function (error) {
         console.log("Error incrementing counter:", error);
@@ -123,6 +125,7 @@ function storeDataInFirebase(type, value) {
     console.log("Error checking last entry:", error);
   });
 }
+
 
 
 // Chart setup
