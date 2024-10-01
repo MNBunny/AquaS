@@ -66,38 +66,55 @@ function fetchData() {
   dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
-// Store data in Firebase with auto-increment ID and formatted timestamp
+// Store data in Firebase with auto-increment ID and formatted timestamp, only if it's different from the last stored value
 function storeDataInFirebase(type, value) {
-  // Get current date and time and format it as MM/DD/YY HH:MM:SS
-  const timestamp = new Date().toLocaleString('en-US', {
-    year: '2-digit',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false  // Optional: Use 24-hour format (disable AM/PM)
-  });
-  
-  // Reference to the counter for the type
-  var counterRef = database.ref(`${type}/counter`);
-  
-  // Get the current count (auto-increment ID)
-  counterRef.transaction(function (currentValue) {
-    // Increment the counter or initialize it if it's the first value
-    return (currentValue || 0) + 1;
-  }).then(function (result) {
-    const newId = result.snapshot.val();  // Get the incremented ID
-    
-    // Store data with the new auto-incremented ID and formatted timestamp
-    database.ref(`${type}/data/${newId}`).set({ 
-      value, 
-      timestamp  // Save formatted timestamp here
+  // Reference to the last saved data
+  var lastEntryRef = database.ref(`${type}/data`).orderByKey().limitToLast(1);
+
+  lastEntryRef.once('value', function (snapshot) {
+    let lastValue = null;
+    snapshot.forEach(function (childSnapshot) {
+      lastValue = childSnapshot.val().value;
     });
-  }).catch(function (error) {
-    console.log("Error incrementing counter:", error);
+
+    // If the value is the same as the last saved value, do not save it again
+    if (lastValue === value) {
+      console.log(`${type} data is already up to date. Skipping storage.`);
+      return;
+    }
+
+    // Get current date and time and format it as MM/DD/YY HH:MM:SS
+    const timestamp = new Date().toLocaleString('en-US', {
+      year: '2-digit',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false  // Optional: Use 24-hour format (disable AM/PM)
+    });
+
+    // Reference to the counter for the type
+    var counterRef = database.ref(`${type}/counter`);
+
+    // Get the current count (auto-increment ID)
+    counterRef.transaction(function (currentValue) {
+      // Increment the counter or initialize it if it's the first value
+      return (currentValue || 0) + 1;
+    }).then(function (result) {
+      const newId = result.snapshot.val();  // Get the incremented ID
+
+      // Store data with the new auto-incremented ID and formatted timestamp
+      database.ref(`${type}/data/${newId}`).set({ 
+        value, 
+        timestamp  // Save formatted timestamp here
+      });
+    }).catch(function (error) {
+      console.log("Error incrementing counter:", error);
+    });
   });
 }
+
 
 
 // Chart setup
