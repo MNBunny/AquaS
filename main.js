@@ -38,6 +38,7 @@ var dataRefNPK = {
 };
 
 // Fetch data for cards and chart
+// Example fetchData function to illustrate usage
 function fetchData() {
   // Soil Moisture for card
   dataRefSoilMoisture.on('value', function (snapshot) {
@@ -66,23 +67,32 @@ function fetchData() {
   dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
-// Store data in Firebase with verification to avoid duplication
+// Store data in Firebase with verification to avoid saving on page refresh
 function storeDataInFirebase(type, value) {
   // Get current date and time and format it as MM/DD/YY and time separately
   const timestamp = new Date();
   const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
   const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
 
+  // Use sessionStorage to track saved data per session
+  const sessionKey = `${type}-saved`;
+
+  // Check if the data for this type has already been saved during this session
+  if (sessionStorage.getItem(sessionKey)) {
+    console.log(`Data for ${type} already saved this session. Skipping save.`);
+    return; // Don't save again if the data has already been saved this session
+  }
+
   // Reference to the latest data for the type
   var lastEntryRef = database.ref(`${type}/data`).orderByKey().limitToLast(1);
 
   // Check the latest entry before saving
-  lastEntryRef.once('value').then(function(snapshot) {
+  lastEntryRef.once('value').then(function (snapshot) {
     let exists = false;
-    snapshot.forEach(function(childSnapshot) {
+    snapshot.forEach(function (childSnapshot) {
       let lastData = childSnapshot.val();
       if (lastData.value === value) {
-        exists = false; // If the new value matches the last stored value, don't save
+        exists = true; // If the new value matches the last stored value, don't save again
       }
     });
 
@@ -102,11 +112,14 @@ function storeDataInFirebase(type, value) {
           date, 
           time  // Save date and time separately
         });
+
+        // Mark this data as saved in the session storage
+        sessionStorage.setItem(sessionKey, true);
       }).catch(function (error) {
         console.log("Error incrementing counter:", error);
       });
     }
-  }).catch(function(error) {
+  }).catch(function (error) {
     console.log("Error checking last entry:", error);
   });
 }
