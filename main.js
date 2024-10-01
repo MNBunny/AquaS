@@ -82,7 +82,7 @@ function storeDataInFirebase(type, value) {
     snapshot.forEach(function(childSnapshot) {
       let lastData = childSnapshot.val();
       if (lastData.value === value) {
-        exists = true; // If the new value matches the last stored value, don't save
+        exists = false; // If the new value matches the last stored value, don't save
       }
     });
 
