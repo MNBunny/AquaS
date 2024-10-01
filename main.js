@@ -38,6 +38,7 @@ var dataRefNPK = {
 };
 
 // Fetch data for cards and chart
+// Example fetchData function to illustrate usage
 function fetchData() {
   // Soil Moisture for card
   dataRefSoilMoisture.on('value', function (snapshot) {
@@ -66,52 +67,64 @@ function fetchData() {
   dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
-// Store data in Firebase with auto-increment ID and formatted timestamp, only if it's different from the last stored value
 function storeDataInFirebase(type, value) {
-  // Reference to the last saved data
+  const timestamp = new Date();
+  const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
+  const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
+
+  const sessionKey = `${type}-saved`;
+
+  // Check the last saved value from session storage
+  const lastSavedValue = sessionStorage.getItem(`${type}-last-value`);
+
+  // If the last saved value is the same as the current value, skip saving
+  if (lastSavedValue && lastSavedValue === value.toString()) {
+    console.log(`Duplicate value for ${type} detected. Skipping save.`);
+    return;
+  }
+
+  // Reference to the latest data for the type
   var lastEntryRef = database.ref(`${type}/data`).orderByKey().limitToLast(1);
 
-  lastEntryRef.once('value', function (snapshot) {
-    let lastValue = null;
+  // Check the latest entry before saving
+  lastEntryRef.once('value').then(function (snapshot) {
+    let exists = false;
     snapshot.forEach(function (childSnapshot) {
-      lastValue = childSnapshot.val().value;
+      let lastData = childSnapshot.val();
+      // Compare the last data value to the current one
+      if (lastData.value === value) {
+        exists = true;
+      }
     });
 
-    // If the value is the same as the last saved value, do not save it again
-    if (lastValue === value) {
-      console.log(`${type} data is already up to date. Skipping storage.`);
-      return;
-    }
+    if (!exists) {
+      // Store data with auto-incremented ID, date, and time
+      var counterRef = database.ref(`${type}/counter`);
 
-    // Get current date and time and format it as MM/DD/YY HH:MM:SS
-    const timestamp = new Date().toLocaleString('en-US', {
-      year: '2-digit',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false  // Optional: Use 24-hour format (disable AM/PM)
-    });
+      // Get the current count (auto-increment ID)
+      counterRef.transaction(function (currentValue) {
+        return (currentValue || 0) + 1;
+      }).then(function (result) {
+        const newId = result.snapshot.val();
 
-    // Reference to the counter for the type
-    var counterRef = database.ref(`${type}/counter`);
+        // Store the new data with the auto-incremented ID, date, and time
+        database.ref(`${type}/data/${newId}`).set({
+          value,
+          date,
+          time
+        });
 
-    // Get the current count (auto-increment ID)
-    counterRef.transaction(function (currentValue) {
-      // Increment the counter or initialize it if it's the first value
-      return (currentValue || 0) + 1;
-    }).then(function (result) {
-      const newId = result.snapshot.val();  // Get the incremented ID
+        // Store the current value in session storage
+        sessionStorage.setItem(`${type}-last-value`, value.toString());
 
-      // Store data with the new auto-incremented ID and formatted timestamp
-      database.ref(`${type}/data/${newId}`).set({ 
-        value, 
-        timestamp  // Save formatted timestamp here
+        // Mark data as saved in the session storage to avoid refresh save
+        sessionStorage.setItem(sessionKey, true);
+      }).catch(function (error) {
+        console.log("Error incrementing counter:", error);
       });
-    }).catch(function (error) {
-      console.log("Error incrementing counter:", error);
-    });
+    }
+  }).catch(function (error) {
+    console.log("Error checking last entry:", error);
   });
 }
 
@@ -219,17 +232,12 @@ function fetchHistoricalData() {
   });
 }
 
-// Download all stored historical data as CSV, including auto-incremented ID
+// Modify downloadData to include separate Date and Time columns
 function downloadData() {
   let csvContent = "data:text/csv;charset=utf-8,";
-  csvContent += "ID,Timestamp,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
+  csvContent += "ID,Date,Time,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
 
-  // Define types of data to be fetched
   const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
-
-  console.log("Attempting to fetch historical data from Firebase...");
-
-  // Use a promise to ensure that all data is fetched before triggering the download
   let promises = [];
   let aggregatedData = {};
 
@@ -238,14 +246,14 @@ function downloadData() {
     const promise = database.ref(`${type}/data`).once('value').then(snapshot => {
       snapshot.forEach(childSnapshot => {
         const data = childSnapshot.val();
-        const id = childSnapshot.key;  // The auto-incremented ID
-        const timestamp = data.timestamp || '';  // Timestamp for the data entry
+        const id = childSnapshot.key;
+        const date = data.date || '';  // Date for the data entry
+        const time = data.time || '';  // Time for the data entry
 
-        // Store each sensor's data under the corresponding ID
         if (!aggregatedData[id]) {
-          aggregatedData[id] = { id, timestamp }; // Create a new entry for each ID
+          aggregatedData[id] = { id, date, time };
         }
-        aggregatedData[id][type] = data.value; // Store the sensor value
+        aggregatedData[id][type] = data.value;
       });
     });
     promises.push(promise);
@@ -255,8 +263,8 @@ function downloadData() {
   Promise.all(promises).then(() => {
     for (const id in aggregatedData) {
       const entry = aggregatedData[id];
-      const row = `${entry.id},${entry.timestamp},${entry.moisture || ''},${entry.humidity || ''},${entry.temperature || ''},${entry.nitrogen || ''},${entry.phosphorus || ''},${entry.potassium || ''}\n`;
-      csvContent += row; // Add the row to CSV content
+      const row = `${entry.id},${entry.date},${entry.time},${entry.moisture || ''},${entry.humidity || ''},${entry.temperature || ''},${entry.nitrogen || ''},${entry.phosphorus || ''},${entry.potassium || ''}\n`;
+      csvContent += row;
     }
     
     const encodedUri = encodeURI(csvContent);
@@ -269,7 +277,6 @@ function downloadData() {
     console.error("Error fetching data for CSV download:", error);
   });
 }
-
 
 
 // Call functions on page load
