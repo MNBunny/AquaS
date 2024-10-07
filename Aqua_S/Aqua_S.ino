@@ -19,8 +19,8 @@ DHT dht(DHTPIN, DHTTYPE);
 #include "addons/TokenHelper.h"
 #include "addons/RTDBHelper.h"
 
-#define WIFI_SSID "GlobeAtHome_d7d38_2.4"
-#define WIFI_PASSWORD "Jy6YEfHQ"
+#define WIFI_SSID "HUAWEI-Zvkm"
+#define WIFI_PASSWORD "jKNK4gmG"
 #define API_KEY "AIzaSyBdUTGzi9iQ3asge53BP3UfLALtBghNggQ"
 #define DATABASE_URL "https://swmscp-9078d-default-rtdb.firebaseio.com/" 
 
