@@ -76,7 +76,7 @@ void loop() {
   float h = dht.readHumidity();
   float t = dht.readTemperature();
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-  int soilMoisturePercent = map(soilMoistureValue, 620, 215, 0, 100);
+  int soilMoisturePercent = map(soilMoistureValue, 620, 393, 0, 100);
 
   if (isnan(h) || isnan(t)) {
 
