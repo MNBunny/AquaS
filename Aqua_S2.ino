@@ -77,7 +77,7 @@ void loop() {
 
   // Reading current soil moisture sensor value
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-  int soilMoisturePercent = map(soilMoistureValue, 620, 393, 0, 100);
+  int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
 
   // Ensure values are within bounds
   if (soilMoisturePercent < 0) soilMoisturePercent = 0;
