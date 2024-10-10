@@ -28,7 +28,7 @@ firebase.initializeApp(firebaseConfig);
 var database = firebase.database();
 
 // References to data
-var dataRefSoilMoisture = database.ref('SoilMoisture/Percent');
+var dataRefSoilMoisture = database.ref('SoilMoisture/Percent_1');
 var dataRefHumidity = database.ref('DHT/humidity');
 var dataRefTemperature = database.ref('DHT/temperature');
 var dataRefNPK = {

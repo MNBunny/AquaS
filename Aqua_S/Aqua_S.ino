@@ -85,9 +85,6 @@ void loop() {
 
   }
 
-  if (soilMoisturePercent < 0) soilMoisturePercent = 0;
-  if (soilMoisturePercent > 100) soilMoisturePercent = 100;
-
   if (Firebase.ready() && signupOK) {
     
     if (Firebase.RTDB.setFloat(&fbdo, "DHT/humidity",h)){
@@ -118,7 +115,7 @@ void loop() {
     
     }
 
-    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent", soilMoisturePercent)){
+    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_1", soilMoisturePercent)){
 
       Serial.print("Soil Moisture: ");
       Serial.print(soilMoisturePercent);
