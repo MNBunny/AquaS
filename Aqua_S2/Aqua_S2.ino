@@ -1,9 +1,13 @@
-#include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <WiFi.h>
 #include <Firebase_ESP_Client.h>
+#include <Arduino.h>
 
+#if defined(ESP32)
+  #include <WiFi.h>
+#elif defined(ESP8266)
+  #include <ESP8266WiFi.h>
+#endif
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -34,8 +38,8 @@ bool signupOK = false;
 void setup() {
   Serial.begin(9600);
   
-  // Initialize OLED display
-  display.begin(SSD1306_I2C_ADDRESS, OLED_RESET);
+  // Initialize OLED display with correct I2C address
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C, OLED_RESET);
   display.clearDisplay();
   display.display();
   
@@ -62,7 +66,9 @@ void setup() {
     Serial.printf("%s\n", config.signer.signupError.message.c_str());
   }
 
-  config.token_status_callback = tokenStatusCallback;
+  // Uncomment if using token status callback
+  // config.token_status_callback = tokenStatusCallback; 
+
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
 
@@ -74,23 +80,14 @@ void setup() {
 }
 
 void loop() {
-
   // Reading current soil moisture sensor value
-  int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-  int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
-
+  int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN); // Get analog reading
+  int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100); // Map to percentage
 
   if (Firebase.ready() && signupOK) {
-    float humidity = 0;
-    float temperature = 0;
     int soilMoisturePercentRealtime = 0;
 
-    // 1st Reading: Read humidity from Firebase
-    if (Firebase.RTDB.getFloat(&fbdo, "DHT/humidity")) {
-      humidity = fbdo.floatData();
-    }
-
-    // 2nd Reading: Get current soil moisture in real-time from Firebase
+    // 1st Reading: Get current soil moisture in real-time from Firebase
     if (Firebase.RTDB.getInt(&fbdo, "SoilMoisture/Percent")) {
       soilMoisturePercentRealtime = fbdo.intData();
     }
@@ -104,31 +101,31 @@ void loop() {
       Serial.println("REASON: " + fbdo.errorReason());
     }
 
-    // 3rd Reading: Read temperature from Firebase
-    if (Firebase.RTDB.getFloat(&fbdo, "DHT/temperature")) {
-      temperature = fbdo.floatData();
-    }
-
     // Display data on OLED
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(0, 0);
-    display.print("Humidity: "); display.print(humidity); display.println(" %");
-    display.print("Temp: "); display.print(temperature); display.println(" °C");
-    display.print("Soil Moisture: "); display.print(soilMoisturePercentRealtime); display.println(" %");
+    display.print("Soil Moisture: "); 
+    display.print(soilMoisturePercentRealtime); 
+    display.println(" %");
 
     // Get current time
-    String currentTime = getCurrentTime(); // Implement a function to get current time
-    display.print("Time: "); display.println(currentTime);
+    String currentTime = getCurrentTime();
+    display.print("Time: "); 
+    display.println(currentTime);
     display.display();
 
-    // Watering rules
-    if (soilMoisturePercentRealtime < 20) { // Adjust this value as needed for dryness level
-      Serial.println("Watering plants immediately.");
+    // Immediate watering if soil moisture percent_2 is 10% or less
+    if (soilMoisturePercentRealtime <= 10) { // Water immediately if soil moisture is 10% or less
+      Serial.println("Watering plants immediately due to dryness.");
       digitalWrite(RELAY1_PIN, HIGH);
       delay(5000); // Water for 5 seconds
       digitalWrite(RELAY1_PIN, LOW);
+    }
+    // Do not water if soil moisture percent_2 is 40% or higher
+    else if (soilMoisturePercentRealtime >= 40) { 
+      Serial.println("Soil moisture is sufficient, no watering needed.");
     }
 
     // Schedule watering at 5 AM and 5 PM
@@ -143,7 +140,6 @@ void loop() {
 
   delay(60000); // Delay between each loop iteration (adjust as necessary)
 }
-
 
 // Function to get the current time (you can implement this using NTP or RTC)
 String getCurrentTime() {
