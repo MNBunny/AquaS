@@ -79,9 +79,6 @@ void loop() {
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
   int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
 
-  // Ensure values are within bounds
-  if (soilMoisturePercent < 0) soilMoisturePercent = 0;
-  if (soilMoisturePercent > 100) soilMoisturePercent = 100;
 
   if (Firebase.ready() && signupOK) {
     float humidity = 0;
@@ -99,7 +96,7 @@ void loop() {
     }
 
     // Send "2nd Reading" of soil moisture to Firebase under a different path
-    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/2ndReading", soilMoisturePercent)) {
+    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent)) {
       Serial.print("2nd Soil Moisture Reading Sent: ");
       Serial.println(soilMoisturePercent);
     } else {
