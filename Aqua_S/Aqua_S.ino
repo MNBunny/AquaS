@@ -1,14 +1,12 @@
-//#include <Wire.h>
-//#include <LiquidCrystal_I2C.h>
 #include "DHT.h"
-
 #include <Arduino.h>
+#include <Firebase_ESP_Client.h>
+
 #if defined(ESP32)
   #include <WiFi.h>
 #elif defined(ESP8266)
   #include <ESP8266WiFi.h>
 #endif
-#include <Firebase_ESP_Client.h>
 
 #define DHTPIN D4
 #define DHTTYPE DHT11
@@ -32,9 +30,6 @@ bool signupOK = false;
 
 void setup() {
   Serial.begin(9600);
-  //lcd.init();
-  //lcd.backlight();
-  //Wire.begin();
   
   dht.begin();
   pinMode(DHTPIN, INPUT);
@@ -49,7 +44,6 @@ void setup() {
   Serial.println();
   Serial.print("Connected with IP: ");
   Serial.println(WiFi.localIP());
-  Serial.println();
 
   config.api_key = API_KEY;
   config.database_url = DATABASE_URL;
@@ -57,12 +51,12 @@ void setup() {
   if (Firebase.signUp(&config, &auth, "", "")){
     Serial.println("ok");
     signupOK = true;
-  }
-  else{
+  }else{
     Serial.printf("%s\n", config.signer.signupError.message.c_str());
   }
 
   config.token_status_callback = tokenStatusCallback;
+
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
 
@@ -85,6 +79,7 @@ void loop() {
   }
 
   if (Firebase.ready() && signupOK) {
+    int soilMoisturePercentRealtime = 0;
     
     if (Firebase.RTDB.setFloat(&fbdo, "DHT/humidity",h)){
       
@@ -116,13 +111,10 @@ void loop() {
 
     if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_1", soilMoisturePercent)){
 
-      Serial.print("Soil Moisture: ");
+      Serial.print("1st Soil Moisture Reading Sent: ");
       Serial.print(soilMoisturePercent);
-      Serial.println(" %");
-
-    }
-    else {
-      Serial.println("FAILED");
+    }else {
+      Serial.println("Failed to send 1st Soil Moisture reading.");
       Serial.println("REASON: " + fbdo.errorReason());
     }
   }
