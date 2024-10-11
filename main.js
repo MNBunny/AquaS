@@ -79,62 +79,28 @@ function storeDataInFirebase(type, value) {
   const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
   const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
 
-  const sessionKey = `${type}-saved`;
+  // No need to check for duplicates; always store the data
+  var counterRef = database.ref(`${type}/counter`);
 
-  // Check the last saved value from session storage
-  const lastSavedValue = sessionStorage.getItem(`${type}-last-value`);
+  // Get the current count (auto-increment ID)
+  counterRef.transaction(function (currentValue) {
+    return (currentValue || 0) + 1;
+  }).then(function (result) {
+    const newId = result.snapshot.val();
 
-  // If the last saved value is the same as the current value, skip saving
-  if (lastSavedValue && lastSavedValue === value.toString()) {
-    console.log(`Duplicate value for ${type} detected. Skipping save.`);
-    return;
-  }
-
-  // Reference to the latest data for the type
-  var lastEntryRef = database.ref(`${type}/data`).orderByKey().limitToLast(1);
-
-  // Check the latest entry before saving
-  lastEntryRef.once('value').then(function (snapshot) {
-    let exists = false;
-    snapshot.forEach(function (childSnapshot) {
-      let lastData = childSnapshot.val();
-      // Compare the last data value to the current one
-      if (lastData.value === value) {
-        exists = true;
-      }
+    // Store the new data with the auto-incremented ID, date, and time
+    database.ref(`${type}/data/${newId}`).set({
+      value,
+      date,
+      time
     });
 
-    if (!exists) {
-      // Store data with auto-incremented ID, date, and time
-      var counterRef = database.ref(`${type}/counter`);
-
-      // Get the current count (auto-increment ID)
-      counterRef.transaction(function (currentValue) {
-        return (currentValue || 0) + 1;
-      }).then(function (result) {
-        const newId = result.snapshot.val();
-
-        // Store the new data with the auto-incremented ID, date, and time
-        database.ref(`${type}/data/${newId}`).set({
-          value,
-          date,
-          time
-        });
-
-        // Store the current value in session storage
-        sessionStorage.setItem(`${type}-last-value`, value.toString());
-
-        // Mark data as saved in the session storage to avoid refresh save
-        sessionStorage.setItem(sessionKey, true);
-      }).catch(function (error) {
-        console.log("Error incrementing counter:", error);
-      });
-    }
+    // Store the current value in session storage
+    sessionStorage.setItem(`${type}-last-value`, value.toString());
   }).catch(function (error) {
-    console.log("Error checking last entry:", error);
+    console.log("Error incrementing counter:", error);
   });
 }
-
 // Chart setup
 const ctx = document.getElementById('area-chart').getContext('2d');
 const areaChart = new Chart(ctx, {
