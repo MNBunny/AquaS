@@ -67,7 +67,7 @@ void setup() {
   }
 
   // Uncomment if using token status callback
-  config.token_status_callback = tokenStatusCallback; 
+  //config.token_status_callback = tokenStatusCallback; 
 
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
@@ -97,7 +97,7 @@ void loop() {
     }
 
     // Send "2nd Reading" of soil moisture to Firebase under a different path
-    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent_2)) {
+    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent)) {
       
       Serial.print("2nd Soil Moisture Reading Sent: ");
       Serial.println(soilMoisturePercent);

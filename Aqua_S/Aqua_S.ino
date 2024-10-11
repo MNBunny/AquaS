@@ -55,7 +55,7 @@ void setup() {
     Serial.printf("%s\n", config.signer.signupError.message.c_str());
   }
 
-  config.token_status_callback = tokenStatusCallback;
+  //config.token_status_callback = tokenStatusCallback;
 
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
@@ -63,7 +63,7 @@ void setup() {
 }
 
 void loop() {
-  delay(300000); // 5-minute delay (300,000 milliseconds)
+  delay(60000); // 5-minute delay (300,000 milliseconds)
   //delay(600000); // 10-minute delay
   
   float h = dht.readHumidity();
@@ -109,7 +109,7 @@ void loop() {
     
     }
 
-    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_1", soilMoisturePercent_1)){
+    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_1", soilMoisturePercent)){
 
       Serial.print("1st Soil Moisture Reading Sent: ");
       Serial.print(soilMoisturePercent);
