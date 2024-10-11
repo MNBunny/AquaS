@@ -29,7 +29,7 @@ bool signupOK = false;
 
 // Relay pin definitions
 #define RELAY1_PIN D1 // Watering relay
-#define RELAY2_PIN D2 // Fertilizer relay
+#define RELAY2_PIN D5 // Fertilizer relay
 #define RELAY3_PIN D3 // Mixing relay
 #define RELAY4_PIN D4 // Another function relay (if needed)
 
@@ -80,6 +80,8 @@ void setup() {
 }
 
 void loop() {
+  delay(300000);
+
   // Reading current soil moisture sensor value
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN); // Get analog reading
   int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100); // Map to percentage
@@ -143,7 +145,8 @@ void loop() {
     }
   }
 
-  delay(60000); // Delay between each loop iteration (adjust as necessary)
+  Serial.println("______________________________");
+
 }
 
 // Function to get the current time (you can implement this using NTP or RTC)

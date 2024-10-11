@@ -63,8 +63,7 @@ void setup() {
 }
 
 void loop() {
-  delay(60000); // 5-minute delay (300,000 milliseconds)
-  //delay(600000); // 10-minute delay
+  delay(300000);
   
   float h = dht.readHumidity();
   float t = dht.readTemperature();
