@@ -28,7 +28,8 @@ firebase.initializeApp(firebaseConfig);
 var database = firebase.database();
 
 // References to data
-var dataRefSoilMoisture = database.ref('SoilMoisture/Percent_1');
+var dataRefSoilMoisture1 = database.ref('SoilMoisture/Percent_1');
+var dataRefSoilMoisture2 = database.ref('SoilMoisture/Percent_2');
 var dataRefHumidity = database.ref('DHT/humidity');
 var dataRefTemperature = database.ref('DHT/temperature');
 var dataRefNPK = {
@@ -38,13 +39,19 @@ var dataRefNPK = {
 };
 
 // Fetch data for cards and chart
-// Example fetchData function to illustrate usage
 function fetchData() {
-  // Soil Moisture for card
-  dataRefSoilMoisture.on('value', function (snapshot) {
-    var mois = snapshot.val();
-    document.getElementById("soilMoisture").innerHTML = mois + "%";
-    storeDataInFirebase('moisture', mois);
+  // Soil Moisture for card 1
+  dataRefSoilMoisture1.on('value', function (snapshot) {
+    var mois1 = snapshot.val();
+    document.getElementById("soilMoisture_1").innerHTML = mois1 + "%";
+    storeDataInFirebase('moisture_1', mois1); // Store Soil Moisture 1 in Firebase
+  });
+
+  // Soil Moisture for card 2
+  dataRefSoilMoisture2.on('value', function (snapshot) {
+    var mois2 = snapshot.val();
+    document.getElementById("soilMoisture_2").innerHTML = mois2 + "%";
+    storeDataInFirebase('moisture_2', mois2); // Store Soil Moisture 2 in Firebase
   });
 
   // Humidity for card
@@ -72,64 +79,28 @@ function storeDataInFirebase(type, value) {
   const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
   const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
 
-  const sessionKey = `${type}-saved`;
+  // No need to check for duplicates; always store the data
+  var counterRef = database.ref(`${type}/counter`);
 
-  // Check the last saved value from session storage
-  const lastSavedValue = sessionStorage.getItem(`${type}-last-value`);
+  // Get the current count (auto-increment ID)
+  counterRef.transaction(function (currentValue) {
+    return (currentValue || 0) + 1;
+  }).then(function (result) {
+    const newId = result.snapshot.val();
 
-  // If the last saved value is the same as the current value, skip saving
-  if (lastSavedValue && lastSavedValue === value.toString()) {
-    console.log(`Duplicate value for ${type} detected. Skipping save.`);
-    return;
-  }
-
-  // Reference to the latest data for the type
-  var lastEntryRef = database.ref(`${type}/data`).orderByKey().limitToLast(1);
-
-  // Check the latest entry before saving
-  lastEntryRef.once('value').then(function (snapshot) {
-    let exists = false;
-    snapshot.forEach(function (childSnapshot) {
-      let lastData = childSnapshot.val();
-      // Compare the last data value to the current one
-      if (lastData.value === value) {
-        exists = true;
-      }
+    // Store the new data with the auto-incremented ID, date, and time
+    database.ref(`${type}/data/${newId}`).set({
+      value,
+      date,
+      time
     });
 
-    if (!exists) {
-      // Store data with auto-incremented ID, date, and time
-      var counterRef = database.ref(`${type}/counter`);
-
-      // Get the current count (auto-increment ID)
-      counterRef.transaction(function (currentValue) {
-        return (currentValue || 0) + 1;
-      }).then(function (result) {
-        const newId = result.snapshot.val();
-
-        // Store the new data with the auto-incremented ID, date, and time
-        database.ref(`${type}/data/${newId}`).set({
-          value,
-          date,
-          time
-        });
-
-        // Store the current value in session storage
-        sessionStorage.setItem(`${type}-last-value`, value.toString());
-
-        // Mark data as saved in the session storage to avoid refresh save
-        sessionStorage.setItem(sessionKey, true);
-      }).catch(function (error) {
-        console.log("Error incrementing counter:", error);
-      });
-    }
+    // Store the current value in session storage
+    sessionStorage.setItem(`${type}-last-value`, value.toString());
   }).catch(function (error) {
-    console.log("Error checking last entry:", error);
+    console.log("Error incrementing counter:", error);
   });
 }
-
-
-
 // Chart setup
 const ctx = document.getElementById('area-chart').getContext('2d');
 const areaChart = new Chart(ctx, {
@@ -211,7 +182,7 @@ function updateNPKChart(snapshot) {
 
 // Fetch historical data from stored records using auto-incremented IDs
 function fetchHistoricalData() {
-  const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
+  const types = ['moisture_1', 'moisture_2', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
   
   types.forEach(type => {
     // Retrieve all historical data stored under the 'data' key
