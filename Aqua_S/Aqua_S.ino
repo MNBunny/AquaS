@@ -109,7 +109,7 @@ void loop() {
     
     }
 
-    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_1", soilMoisturePercent)){
+    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_1", soilMoisturePercent_1)){
 
       Serial.print("1st Soil Moisture Reading Sent: ");
       Serial.print(soilMoisturePercent);

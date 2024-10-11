@@ -97,7 +97,7 @@ void loop() {
     }
 
     // Send "2nd Reading" of soil moisture to Firebase under a different path
-    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent)) {
+    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent_2)) {
       
       Serial.print("2nd Soil Moisture Reading Sent: ");
       Serial.println(soilMoisturePercent);
