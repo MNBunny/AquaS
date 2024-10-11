@@ -28,7 +28,8 @@ firebase.initializeApp(firebaseConfig);
 var database = firebase.database();
 
 // References to data
-var dataRefSoilMoisture = database.ref('SoilMoisture/Percent_1');
+var dataRefSoilMoisture1 = database.ref('SoilMoisture/Percent_1');
+var dataRefSoilMoisture2 = database.ref('SoilMoisture/Percent_2');
 var dataRefHumidity = database.ref('DHT/humidity');
 var dataRefTemperature = database.ref('DHT/temperature');
 var dataRefNPK = {
@@ -38,13 +39,19 @@ var dataRefNPK = {
 };
 
 // Fetch data for cards and chart
-// Example fetchData function to illustrate usage
 function fetchData() {
-  // Soil Moisture for card
-  dataRefSoilMoisture.on('value', function (snapshot) {
-    var mois = snapshot.val();
-    document.getElementById("soilMoisture").innerHTML = mois + "%";
-    storeDataInFirebase('moisture', mois);
+  // Soil Moisture for card 1
+  dataRefSoilMoisture1.on('value', function (snapshot) {
+    var mois1 = snapshot.val();
+    document.getElementById("soilMoisture_1").innerHTML = mois1 + "%";
+    storeDataInFirebase('moisture_1', mois1); // Store Soil Moisture 1 in Firebase
+  });
+
+  // Soil Moisture for card 2
+  dataRefSoilMoisture2.on('value', function (snapshot) {
+    var mois2 = snapshot.val();
+    document.getElementById("soilMoisture_2").innerHTML = mois2 + "%";
+    storeDataInFirebase('moisture_2', mois2); // Store Soil Moisture 2 in Firebase
   });
 
   // Humidity for card
@@ -128,8 +135,6 @@ function storeDataInFirebase(type, value) {
   });
 }
 
-
-
 // Chart setup
 const ctx = document.getElementById('area-chart').getContext('2d');
 const areaChart = new Chart(ctx, {
@@ -211,7 +216,7 @@ function updateNPKChart(snapshot) {
 
 // Fetch historical data from stored records using auto-incremented IDs
 function fetchHistoricalData() {
-  const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
+  const types = ['moisture_1', 'moisture_2', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
   
   types.forEach(type => {
     // Retrieve all historical data stored under the 'data' key
