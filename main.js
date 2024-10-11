@@ -38,34 +38,47 @@ var dataRefNPK = {
   potassium: database.ref('NPK/potassium')
 };
 
-// Fetch data for cards and chart
 function fetchData() {
   // Soil Moisture for card 1
   dataRefSoilMoisture1.on('value', function (snapshot) {
     var mois1 = snapshot.val();
     document.getElementById("soilMoisture_1").innerHTML = mois1 + "%";
-    storeDataInFirebase('moisture_1', mois1); // Store Soil Moisture 1 in Firebase
+
+    // Create structured data
+    const moistureData1 = {
+      value: mois1,
+      timestamp: new Date().toISOString() // Adding ISO timestamp for better date handling
+    };
+
+    storeDataInFirebase('SoilMoisture/Percent_1', moistureData1, 'Soil Moisture Sensor 1'); // Specify the sensor
   });
 
   // Soil Moisture for card 2
   dataRefSoilMoisture2.on('value', function (snapshot) {
     var mois2 = snapshot.val();
     document.getElementById("soilMoisture_2").innerHTML = mois2 + "%";
-    storeDataInFirebase('moisture_2', mois2); // Store Soil Moisture 2 in Firebase
+
+    // Create structured data
+    const moistureData2 = {
+      value: mois2,
+      timestamp: new Date().toISOString() // Adding ISO timestamp for better date handling
+    };
+
+    storeDataInFirebase('SoilMoisture/Percent_2', moistureData2, 'Soil Moisture Sensor 2'); // Specify the sensor
   });
 
   // Humidity for card
   dataRefHumidity.on('value', function (snapshot) {
     var humi = snapshot.val();
     document.getElementById('humidity').innerHTML = humi + "%";
-    storeDataInFirebase('humidity', humi);
+    storeDataInFirebase('humidity', humi, 'Humidity Sensor'); // Specify the sensor
   });
 
   // Temperature for card
   dataRefTemperature.on('value', function (snapshot) {
     var temp = snapshot.val();
     document.getElementById('temperature').innerHTML = temp + "&#8451;";
-    storeDataInFirebase('temperature', temp);
+    storeDataInFirebase('temperature', temp, 'Temperature Sensor'); // Specify the sensor
   });
 
   // NPK for chart
@@ -74,33 +87,38 @@ function fetchData() {
   dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
-function storeDataInFirebase(type, value) {
-  const timestamp = new Date();
-  const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
-  const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
 
-  // No need to check for duplicates; always store the data
-  var counterRef = database.ref(`${type}/counter`);
+function storeDataInFirebase(type, value, sensor) {
+  // Reference to the latest data for the type
+  var lastEntryRef = database.ref(`${type}/data`).orderByKey().limitToLast(1);
 
-  // Get the current count (auto-increment ID)
-  counterRef.transaction(function (currentValue) {
-    return (currentValue || 0) + 1;
-  }).then(function (result) {
-    const newId = result.snapshot.val();
+  // Check the latest entry before saving
+  lastEntryRef.once('value').then(function (snapshot) {
+    const timestamp = new Date();
+    const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
+    const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
 
-    // Store the new data with the auto-incremented ID, date, and time
-    database.ref(`${type}/data/${newId}`).set({
+    // Auto-generate a unique key with Firebase push() instead of using a counter
+    const newDataRef = database.ref(`${type}/data`).push();
+
+    // Store the new data with the generated key, date, time, and sensor identifier
+    newDataRef.set({
       value,
       date,
-      time
+      time,
+      sensor // Include the sensor identifier here
+    }).then(() => {
+      // Store the current value in session storage for future reference
+      sessionStorage.setItem(`${type}-last-value`, value.toString());
+    }).catch(function (error) {
+      console.error("Error saving data:", error);
     });
-
-    // Store the current value in session storage
-    sessionStorage.setItem(`${type}-last-value`, value.toString());
   }).catch(function (error) {
-    console.log("Error incrementing counter:", error);
+    console.error("Error checking last entry:", error);
   });
 }
+
+
 // Chart setup
 const ctx = document.getElementById('area-chart').getContext('2d');
 const areaChart = new Chart(ctx, {
