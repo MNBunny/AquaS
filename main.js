@@ -42,90 +42,91 @@ let moisture1 = 0;
 let moisture2 = 0;
 
 function fetchData() {
-  // Soil Moisture Sensor 1
-  dataRefSoilMoisture1.on('value', function (snapshot) {
-      moisture1 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
-      updateSoilMoistureTotal();
-      storeSoilMoistureInFirebase('moisture1', moisture1);
-  });
+    // Soil Moisture Sensor 1
+    dataRefSoilMoisture1.on('value', function (snapshot) {
+        moisture1 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
+        updateSoilMoistureDisplay();
+        storeSoilMoistureInFirebase('moisture1', moisture1); // Save moisture1 to Firebase
+    });
 
-  // Soil Moisture Sensor 2
-  dataRefSoilMoisture2.on('value', function (snapshot) {
-      moisture2 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
-      updateSoilMoistureTotal();
-      storeSoilMoistureInFirebase('moisture2', moisture2);
-  });
+    // Soil Moisture Sensor 2
+    dataRefSoilMoisture2.on('value', function (snapshot) {
+        moisture2 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
+        updateSoilMoistureDisplay();
+        storeSoilMoistureInFirebase('moisture2', moisture2); // Save moisture2 to Firebase
+    });
 
-  // Humidity
-  dataRefHumidity.on('value', function (snapshot) {
-      const humi = snapshot.val() || 0;
-      document.getElementById('humidity').innerHTML = `${humi}%`;
-      storeDataInFirebase('humidity', humi);
-  });
+    // Humidity
+    dataRefHumidity.on('value', function (snapshot) {
+        const humi = snapshot.val() || 0;
+        document.getElementById('humidity').innerHTML = `${humi}%`;
+        storeDataInFirebase('humidity', humi);
+    });
 
-  // Temperature
-  dataRefTemperature.on('value', function (snapshot) {
-      const temp = snapshot.val() || 0;
-      document.getElementById('temperature').innerHTML = `${temp}&#8451;`;
-      storeDataInFirebase('temperature', temp);
-  });
+    // Temperature
+    dataRefTemperature.on('value', function (snapshot) {
+        const temp = snapshot.val() || 0;
+        document.getElementById('temperature').innerHTML = `${temp}&#8451;`;
+        storeDataInFirebase('temperature', temp);
+    });
 
-  // NPK Data Updates
-  dataRefNPK.nitrogen.on('value', updateNPKChart);
-  dataRefNPK.phosphorus.on('value', updateNPKChart);
-  dataRefNPK.potassium.on('value', updateNPKChart);
+    // NPK Data Updates
+    dataRefNPK.nitrogen.on('value', updateNPKChart);
+    dataRefNPK.phosphorus.on('value', updateNPKChart);
+    dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
-function updateSoilMoistureTotal() {
-  const totalMoisture = moisture1 + moisture2;
-  document.getElementById('soilMoisture').innerHTML = `${totalMoisture}%`;
+function updateSoilMoistureDisplay() {
+    const totalMoisture = moisture1 + moisture2;
+    document.getElementById('soilMoisture').innerHTML = `${totalMoisture}%`;
 }
 
 // Call fetchData on page load
 fetchData();
 
 function storeDataInFirebase(type, value) {
-  // Retrieve last saved value from session storage
-  const lastValue = sessionStorage.getItem(`${type}-last-value`);
+    // Retrieve last saved value from session storage
+    const lastValue = sessionStorage.getItem(`${type}-last-value`);
 
-  // Compare current value with the last saved value
-  if (value.toString() !== lastValue) {
-      const timestamp = new Date();
-      const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
-      const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
+    // Compare current value with the last saved value
+    if (value.toString() !== lastValue) {
+        const timestamp = new Date();
+        const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
+        const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
 
-      // Firebase counter reference for auto-incrementing the ID
-      const counterRef = database.ref(`${type}/counter`);
+        // Firebase counter reference for auto-incrementing the ID
+        const counterRef = database.ref(`${type}/counter`);
 
-      // Increment the counter and store the new data
-      counterRef.transaction(function (currentValue) {
-          return (currentValue || 0) + 1;  // Increment counter or start at 1
-      }).then(function (result) {
-          const newId = result.snapshot.val();  // Get new incremented ID
+        // Increment the counter and store the new data
+        counterRef.transaction(function (currentValue) {
+            return (currentValue || 0) + 1;  // Increment counter or start at 1
+        }).then(function (result) {
+            const newId = result.snapshot.val();  // Get new incremented ID
 
-          // Store the new data with auto-incremented ID, date, and time
-          database.ref(`${type}/data/${newId}`).set({
-              value,
-              date,
-              time
-          });
+            // Store the new data with auto-incremented ID, date, and time
+            database.ref(`${type}/data/${newId}`).set({
+                value,
+                date,
+                time
+            });
 
-          console.log(`Saved ${type} data:`, { value, date, time });
+            console.log(`Saved ${type} data:`, { value, date, time });
 
-          // Store the current value in session storage to track the last value
-          sessionStorage.setItem(`${type}-last-value`, value.toString());
-      }).catch(function (error) {
-          console.error("Error saving data:", error);
-      });
-  } else {
-      console.log(`No change in ${type}. Data not saved.`);
-  }
+            // Store the current value in session storage to track the last value
+            sessionStorage.setItem(`${type}-last-value`, value.toString());
+        }).catch(function (error) {
+            console.error("Error saving data:", error);
+        });
+    } else {
+        console.log(`No change in ${type}. Data not saved.`);
+    }
 }
 
 function storeSoilMoistureInFirebase(sensor, value) {
-  // Call storeDataInFirebase for soil moisture readings
-  storeDataInFirebase(sensor, value);
+    // Call storeDataInFirebase for soil moisture readings
+    storeDataInFirebase(sensor, value);
 }
+
 
 // Chart setup
 const ctx = document.getElementById('area-chart').getContext('2d');
