@@ -46,12 +46,14 @@ function fetchData() {
   dataRefSoilMoisture1.on('value', function (snapshot) {
       moisture1 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
       updateSoilMoistureTotal();
+      storeSoilMoistureInFirebase('moisture1', moisture1);
   });
 
   // Soil Moisture Sensor 2
   dataRefSoilMoisture2.on('value', function (snapshot) {
       moisture2 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
       updateSoilMoistureTotal();
+      storeSoilMoistureInFirebase('moisture2', moisture2);
   });
 
   // Humidity
@@ -77,7 +79,6 @@ function fetchData() {
 function updateSoilMoistureTotal() {
   const totalMoisture = moisture1 + moisture2;
   document.getElementById('soilMoisture').innerHTML = `${totalMoisture}%`;
-  storeDataInFirebase('total_moisture', totalMoisture);  // Optional: Store in Firebase
 }
 
 // Call fetchData on page load
@@ -119,6 +120,11 @@ function storeDataInFirebase(type, value) {
   } else {
       console.log(`No change in ${type}. Data not saved.`);
   }
+}
+
+function storeSoilMoistureInFirebase(sensor, value) {
+  // Call storeDataInFirebase for soil moisture readings
+  storeDataInFirebase(sensor, value);
 }
 
 // Chart setup
