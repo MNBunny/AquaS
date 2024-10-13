@@ -38,40 +38,51 @@ var dataRefNPK = {
   potassium: database.ref('NPK/potassium')
 };
 
+let moisture1 = 0;
+let moisture2 = 0;
+
 function fetchData() {
-  // Soil Moisture Sensor 1 for card
+  // Soil Moisture Sensor 1
   dataRefSoilMoisture1.on('value', function (snapshot) {
-    var mois1 = snapshot.val();
-    document.getElementById("soilMoisture1").innerHTML = mois1 + "%";
-    storeDataInFirebase('moisture1', mois1);
+    moisture1 = snapshot.val() || 0;  // Store value in moisture1
+    updateSoilMoistureTotal();  // Call update function
   });
 
-  // Soil Moisture Sensor 2 for card
+  // Soil Moisture Sensor 2
   dataRefSoilMoisture2.on('value', function (snapshot) {
-    var mois2 = snapshot.val();
-    document.getElementById("soilMoisture2").innerHTML = mois2 + "%";
-    storeDataInFirebase('moisture2', mois2);
+    moisture2 = snapshot.val() || 0;  // Store value in moisture2
+    updateSoilMoistureTotal();  // Call update function
   });
 
   // Humidity for card
   dataRefHumidity.on('value', function (snapshot) {
-    var humi = snapshot.val();
+    const humi = snapshot.val();
     document.getElementById('humidity').innerHTML = humi + "%";
     storeDataInFirebase('humidity', humi);
   });
 
   // Temperature for card
   dataRefTemperature.on('value', function (snapshot) {
-    var temp = snapshot.val();
+    const temp = snapshot.val();
     document.getElementById('temperature').innerHTML = temp + "&#8451;";
     storeDataInFirebase('temperature', temp);
   });
 
-  // NPK for chart
+  // NPK data update
   dataRefNPK.nitrogen.on('value', updateNPKChart);
   dataRefNPK.phosphorus.on('value', updateNPKChart);
   dataRefNPK.potassium.on('value', updateNPKChart);
 }
+
+// Update Soil Moisture Total
+function updateSoilMoistureTotal() {
+  const totalMoisture = moisture1 + moisture2;  // Sum the two values
+  document.getElementById("soilMoisture1").innerHTML = totalMoisture + "%";
+  storeDataInFirebase('total_moisture', totalMoisture);  // Optional: Save to Firebase
+}
+
+// Call the fetchData function on page load
+fetchData();
 
 
 
