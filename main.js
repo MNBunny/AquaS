@@ -10,23 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
   closeButton.addEventListener('click', function () {
       sidebar.classList.remove('sidebar-responsive'); // Close the sidebar
   });
-
-  // Add event listeners for menu items to show dashboard or sensor content
-  document.getElementById('show-dashboard').addEventListener('click', showDashboard);
-  document.getElementById('show-sensor').addEventListener('click', showSensor);
 });
-
-// Function to show the dashboard content
-function showDashboard() {
-    document.getElementById('dashboard-content').classList.remove('hidden');
-    document.getElementById('sensor-content').classList.add('hidden');
-}
-
-// Function to show the sensor content
-function showSensor() {
-    document.getElementById('sensor-content').classList.remove('hidden');
-    document.getElementById('dashboard-content').classList.add('hidden');
-}
 
 // Firebase configuration
 const firebaseConfig = {
