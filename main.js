@@ -76,7 +76,7 @@ function fetchData() {
 
 function updateSoilMoistureTotal() {
   const totalMoisture = moisture1 + moisture2;
-  document.getElementById("soilMoisture1").innerHTML = `${totalMoisture}%`;
+  document.getElementById('soilMoisture1').innerHTML = `${totalMoisture}%`;
   storeDataInFirebase('total_moisture', totalMoisture);  // Optional: Store in Firebase
 }
 
