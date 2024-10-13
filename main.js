@@ -44,44 +44,43 @@ let moisture2 = 0;
 function fetchData() {
   // Soil Moisture Sensor 1
   dataRefSoilMoisture1.on('value', function (snapshot) {
-    moisture1 = snapshot.val() || 0;  // Store value in moisture1
-    updateSoilMoistureTotal();  // Call update function
+    moisture1 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
+    updateSoilMoistureTotal();
   });
 
   // Soil Moisture Sensor 2
   dataRefSoilMoisture2.on('value', function (snapshot) {
-    moisture2 = snapshot.val() || 0;  // Store value in moisture2
-    updateSoilMoistureTotal();  // Call update function
+    moisture2 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
+    updateSoilMoistureTotal();
   });
 
-  // Humidity for card
+  // Humidity
   dataRefHumidity.on('value', function (snapshot) {
-    const humi = snapshot.val();
-    document.getElementById('humidity').innerHTML = humi + "%";
+    const humi = snapshot.val() || 0;
+    document.getElementById('humidity').innerHTML = `${humi}%`;
     storeDataInFirebase('humidity', humi);
   });
 
-  // Temperature for card
+  // Temperature
   dataRefTemperature.on('value', function (snapshot) {
-    const temp = snapshot.val();
-    document.getElementById('temperature').innerHTML = temp + "&#8451;";
+    const temp = snapshot.val() || 0;
+    document.getElementById('temperature').innerHTML = `${temp}&#8451;`;
     storeDataInFirebase('temperature', temp);
   });
 
-  // NPK data update
+  // NPK Data Updates
   dataRefNPK.nitrogen.on('value', updateNPKChart);
   dataRefNPK.phosphorus.on('value', updateNPKChart);
   dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
-// Update Soil Moisture Total
 function updateSoilMoistureTotal() {
-  const totalMoisture = moisture1 + moisture2;  // Sum the two values
-  document.getElementById("soilMoisture1").innerHTML = totalMoisture + "%";
-  storeDataInFirebase('total_moisture', totalMoisture);  // Optional: Save to Firebase
+  const totalMoisture = moisture1 + moisture2;
+  document.getElementById("soilMoisture1").innerHTML = `${totalMoisture}%`;
+  storeDataInFirebase('total_moisture', totalMoisture);  // Optional: Store in Firebase
 }
 
-// Call the fetchData function on page load
+// Call fetchData on page load
 fetchData();
 
 
