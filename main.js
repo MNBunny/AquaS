@@ -4,11 +4,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const closeButton = document.querySelector('.close-button');
 
   menuIcon.addEventListener('click', function () {
-    sidebar.classList.toggle('sidebar-responsive');
+      sidebar.classList.toggle('sidebar-responsive');
   });
 
   closeButton.addEventListener('click', function () {
-    sidebar.classList.remove('sidebar-responsive'); // Close the sidebar
+      sidebar.classList.remove('sidebar-responsive'); // Close the sidebar
   });
 });
 
@@ -44,28 +44,28 @@ let moisture2 = 0;
 function fetchData() {
   // Soil Moisture Sensor 1
   dataRefSoilMoisture1.on('value', function (snapshot) {
-    moisture1 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
-    updateSoilMoistureTotal();
+      moisture1 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
+      updateSoilMoistureTotal();
   });
 
   // Soil Moisture Sensor 2
   dataRefSoilMoisture2.on('value', function (snapshot) {
-    moisture2 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
-    updateSoilMoistureTotal();
+      moisture2 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
+      updateSoilMoistureTotal();
   });
 
   // Humidity
   dataRefHumidity.on('value', function (snapshot) {
-    const humi = snapshot.val() || 0;
-    document.getElementById('humidity').innerHTML = `${humi}%`;
-    storeDataInFirebase('humidity', humi);
+      const humi = snapshot.val() || 0;
+      document.getElementById('humidity').innerHTML = `${humi}%`;
+      storeDataInFirebase('humidity', humi);
   });
 
   // Temperature
   dataRefTemperature.on('value', function (snapshot) {
-    const temp = snapshot.val() || 0;
-    document.getElementById('temperature').innerHTML = `${temp}&#8451;`;
-    storeDataInFirebase('temperature', temp);
+      const temp = snapshot.val() || 0;
+      document.getElementById('temperature').innerHTML = `${temp}&#8451;`;
+      storeDataInFirebase('temperature', temp);
   });
 
   // NPK Data Updates
@@ -76,105 +76,109 @@ function fetchData() {
 
 function updateSoilMoistureTotal() {
   const totalMoisture = moisture1 + moisture2;
-  document.getElementById('soilMoisture1').innerHTML = `${totalMoisture}%`;
+  document.getElementById('soilMoisture').innerHTML = `${totalMoisture}%`;
   storeDataInFirebase('total_moisture', totalMoisture);  // Optional: Store in Firebase
 }
 
 // Call fetchData on page load
 fetchData();
 
-
-
 function storeDataInFirebase(type, value) {
-  const timestamp = new Date();
-  const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
-  const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
+  // Retrieve last saved value from session storage
+  const lastValue = sessionStorage.getItem(`${type}-last-value`);
 
-  // Firebase counter reference for auto-incrementing the ID
-  const counterRef = database.ref(`${type}/counter`);
+  // Compare current value with the last saved value
+  if (value.toString() !== lastValue) {
+      const timestamp = new Date();
+      const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
+      const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
 
-  // Increment the counter and store the new data
-  counterRef.transaction(function (currentValue) {
-    return (currentValue || 0) + 1;  // Increment counter or start at 1
-  }).then(function (result) {
-    const newId = result.snapshot.val();  // Get new incremented ID
+      // Firebase counter reference for auto-incrementing the ID
+      const counterRef = database.ref(`${type}/counter`);
 
-    // Store the new data with auto-incremented ID, date, and time
-    database.ref(`${type}/data/${newId}`).set({
-      value,
-      date,
-      time
-    });
+      // Increment the counter and store the new data
+      counterRef.transaction(function (currentValue) {
+          return (currentValue || 0) + 1;  // Increment counter or start at 1
+      }).then(function (result) {
+          const newId = result.snapshot.val();  // Get new incremented ID
 
-    console.log(`Saved ${type} data:`, { value, date, time });
+          // Store the new data with auto-incremented ID, date, and time
+          database.ref(`${type}/data/${newId}`).set({
+              value,
+              date,
+              time
+          });
 
-    // Optional: Store the current value in session storage to track the last value
-    sessionStorage.setItem(`${type}-last-value`, value.toString());
-  }).catch(function (error) {
-    console.error("Error saving data:", error);
-  });
+          console.log(`Saved ${type} data:`, { value, date, time });
+
+          // Store the current value in session storage to track the last value
+          sessionStorage.setItem(`${type}-last-value`, value.toString());
+      }).catch(function (error) {
+          console.error("Error saving data:", error);
+      });
+  } else {
+      console.log(`No change in ${type}. Data not saved.`);
+  }
 }
-
-
 
 // Chart setup
 const ctx = document.getElementById('area-chart').getContext('2d');
 const areaChart = new Chart(ctx, {
   type: 'line',
   data: {
-    labels: [],
-    datasets: [
-      {
-        label: 'Nitrogen',
-        data: [],
-        backgroundColor: 'rgba(255, 99, 132, 0.4)',
-        borderColor: 'rgba(255, 99, 132, 1)',
-        fill: true
-      },
-      {
-        label: 'Phosphorus',
-        data: [],
-        backgroundColor: 'rgba(54, 162, 235, 0.4)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        fill: true
-      },
-      {
-        label: 'Potassium',
-        data: [],
-        backgroundColor: 'rgba(75, 192, 192, 0.4)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        fill: true
-      }
-    ]
+      labels: [],
+      datasets: [
+          {
+              label: 'Nitrogen',
+              data: [],
+              backgroundColor: 'rgba(255, 99, 132, 0.4)',
+              borderColor: 'rgba(255, 99, 132, 1)',
+              fill: true
+          },
+          {
+              label: 'Phosphorus',
+              data: [],
+              backgroundColor: 'rgba(54, 162, 235, 0.4)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              fill: true
+          },
+          {
+              label: 'Potassium',
+              data: [],
+              backgroundColor: 'rgba(75, 192, 192, 0.4)',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              fill: true
+          }
+      ]
   },
   options: {
-    responsive: true,
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: { color: '#f5f7ff' },
-        title: { display: true, text: 'Nutrient Level (ppm)', color: '#f5f7ff' }
+      responsive: true,
+      scales: {
+          y: {
+              beginAtZero: true,
+              ticks: { color: '#f5f7ff' },
+              title: { display: true, text: 'Nutrient Level (ppm)', color: '#f5f7ff' }
+          },
+          x: {
+              ticks: { color: '#f5f7ff' },
+              title: { display: true, text: 'Time', color: '#f5f7ff' }
+          }
       },
-      x: {
-        ticks: { color: '#f5f7ff' },
-        title: { display: true, text: 'Time', color: '#f5f7ff' }
+      plugins: {
+          legend: {
+              labels: { color: '#f5f7ff' }
+          },
+          zoom: {
+              pan: {
+                  enabled: true,
+                  mode: 'x',
+              },
+              zoom: {
+                  enabled: true,
+                  mode: 'x',
+              }
+          }
       }
-    },
-    plugins: {
-      legend: {
-        labels: { color: '#f5f7ff' }
-      },
-      zoom: {
-        pan: {
-          enabled: true,
-          mode: 'x',
-        },
-        zoom: {
-          enabled: true,
-          mode: 'x',
-        }
-      }
-    }
   }
 });
 
@@ -185,11 +189,11 @@ function updateNPKChart(snapshot) {
   var timestamp = new Date().toLocaleString();
 
   if (dataKey === 'nitrogen') {
-    areaChart.data.datasets[0].data.push(value);
+      areaChart.data.datasets[0].data.push(value);
   } else if (dataKey === 'phosphorus') {
-    areaChart.data.datasets[1].data.push(value);
+      areaChart.data.datasets[1].data.push(value);
   } else if (dataKey === 'potassium') {
-    areaChart.data.datasets[2].data.push(value);
+      areaChart.data.datasets[2].data.push(value);
   }
 
   areaChart.data.labels.push(timestamp);
@@ -201,29 +205,27 @@ function fetchHistoricalData() {
   const types = ['moisture_1', 'moisture_2', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
 
   types.forEach(async (type) => {
-    try {
-      // Retrieve all historical data stored under the 'data' key
-      const snapshot = await database.ref(`${type}/data`).once('value');
-      const dataRecords = snapshot.val();  // Get all records as an object
+      try {
+          const snapshot = await database.ref(`${type}/data`).once('value');
+          const dataRecords = snapshot.val();  // Get all records as an object
 
-      if (dataRecords) {
-        Object.entries(dataRecords).forEach(([id, data]) => {
-          console.log(`${type} at ID ${id}:`, data);  // Log each record
+          if (dataRecords) {
+              Object.entries(dataRecords).forEach(([id, data]) => {
+                  console.log(`${type} at ID ${id}:`, data);  // Log each record
 
-          // If it's NPK data, update the chart
-          if (['nitrogen', 'phosphorus', 'potassium'].includes(type)) {
-            updateNPKChart({ key: type, value: data.value });
+                  // If it's NPK data, update the chart
+                  if (['nitrogen', 'phosphorus', 'potassium'].includes(type)) {
+                      updateNPKChart({ key: type, value: data.value });
+                  }
+              });
+          } else {
+              console.log(`No historical data found for ${type}.`);
           }
-        });
-      } else {
-        console.log(`No historical data found for ${type}.`);
+      } catch (error) {
+          console.error(`Error fetching data for ${type}:`, error);
       }
-    } catch (error) {
-      console.error(`Error fetching data for ${type}:`, error);
-    }
   });
 }
-
 
 // Modify downloadData to include separate Date and Time columns
 function downloadData() {
@@ -231,50 +233,33 @@ function downloadData() {
   csvContent += "ID,Date,Time,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
 
   const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
-  let promises = [];
-  let aggregatedData = {};
+  const ids = [];  // Array to hold the IDs
 
-  // Iterate over each type of data (moisture, humidity, etc.)
   types.forEach(type => {
-    const promise = database.ref(`${type}/data`).once('value').then(snapshot => {
-      snapshot.forEach(childSnapshot => {
-        const data = childSnapshot.val();
-        const id = childSnapshot.key;
-        const date = data.date || '';  // Date for the data entry
-        const time = data.time || '';  // Time for the data entry
+      const dataRef = database.ref(`${type}/data`);
+      dataRef.once('value', (snapshot) => {
+          const dataRecords = snapshot.val();
 
-        if (!aggregatedData[id]) {
-          aggregatedData[id] = { id, date, time };
-        }
-        aggregatedData[id][type] = data.value;
+          if (dataRecords) {
+              Object.entries(dataRecords).forEach(([id, data]) => {
+                  ids.push(id); // Collect IDs for download
+
+                  const row = `${id},${data.date},${data.time},${data.value},${data.value || ''},${data.value || ''},${data.value || ''},${data.value || ''},${data.value || ''}`;
+                  csvContent += row + "\n";
+              });
+          }
       });
-    });
-    promises.push(promise);
   });
 
-  // After all data is fetched, trigger CSV download
-  Promise.all(promises).then(() => {
-    for (const id in aggregatedData) {
-      const entry = aggregatedData[id];
-      const row = `${entry.id},${entry.date},${entry.time},${entry.moisture || ''},${entry.humidity || ''},${entry.temperature || ''},${entry.nitrogen || ''},${entry.phosphorus || ''},${entry.potassium || ''}\n`;
-      csvContent += row;
-    }
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "Sensor_Datasets.csv");
-    document.body.appendChild(link);
-    link.click();
-  }).catch(error => {
-    console.error("Error fetching data for CSV download:", error);
-  });
+  // Create a link and trigger download
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "sensor_data.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
-
-// Call functions on page load
-fetchData();
+// Call fetchHistoricalData on page load
 fetchHistoricalData();
-
-// Add event listener for CSV download
-document.getElementById('download-button').addEventListener('click', downloadData);
