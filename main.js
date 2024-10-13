@@ -39,46 +39,32 @@ var dataRefNPK = {
 };
 
 function fetchData() {
-  // Soil Moisture for card 1
+  // Soil Moisture Sensor 1 for card
   dataRefSoilMoisture1.on('value', function (snapshot) {
     var mois1 = snapshot.val();
-    document.getElementById("soilMoisture_1").innerHTML = mois1 + "%";
-
-    // Create structured data
-    const moistureData1 = {
-      value: mois1,
-      timestamp: new Date().toISOString() // Adding ISO timestamp for better date handling
-    };
-
-    storeDataInFirebase('SoilMoisture/Percent_1', moistureData1, 'Soil Moisture Sensor 1'); // Specify the sensor
+    document.getElementById("soilMoisture1").innerHTML = mois1 + "%";
+    storeDataInFirebase('moisture1', mois1);
   });
 
-  // Soil Moisture for card 2
+  // Soil Moisture Sensor 2 for card
   dataRefSoilMoisture2.on('value', function (snapshot) {
     var mois2 = snapshot.val();
-    document.getElementById("soilMoisture_2").innerHTML = mois2 + "%";
-
-    // Create structured data
-    const moistureData2 = {
-      value: mois2,
-      timestamp: new Date().toISOString() // Adding ISO timestamp for better date handling
-    };
-
-    storeDataInFirebase('SoilMoisture/Percent_2', moistureData2, 'Soil Moisture Sensor 2'); // Specify the sensor
+    document.getElementById("soilMoisture2").innerHTML = mois2 + "%";
+    storeDataInFirebase('moisture2', mois2);
   });
 
   // Humidity for card
   dataRefHumidity.on('value', function (snapshot) {
     var humi = snapshot.val();
     document.getElementById('humidity').innerHTML = humi + "%";
-    storeDataInFirebase('humidity', humi, 'Humidity Sensor'); // Specify the sensor
+    storeDataInFirebase('humidity', humi);
   });
 
   // Temperature for card
   dataRefTemperature.on('value', function (snapshot) {
     var temp = snapshot.val();
     document.getElementById('temperature').innerHTML = temp + "&#8451;";
-    storeDataInFirebase('temperature', temp, 'Temperature Sensor'); // Specify the sensor
+    storeDataInFirebase('temperature', temp);
   });
 
   // NPK for chart
@@ -88,35 +74,37 @@ function fetchData() {
 }
 
 
-function storeDataInFirebase(type, value, sensor) {
-  // Reference to the latest data for the type
-  var lastEntryRef = database.ref(`${type}/data`).orderByKey().limitToLast(1);
 
-  // Check the latest entry before saving
-  lastEntryRef.once('value').then(function (snapshot) {
-    const timestamp = new Date();
-    const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
-    const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
+function storeDataInFirebase(type, value) {
+  const timestamp = new Date();
+  const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
+  const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
 
-    // Auto-generate a unique key with Firebase push() instead of using a counter
-    const newDataRef = database.ref(`${type}/data`).push();
+  // Firebase counter reference for auto-incrementing the ID
+  const counterRef = database.ref(`${type}/counter`);
 
-    // Store the new data with the generated key, date, time, and sensor identifier
-    newDataRef.set({
+  // Increment the counter and store the new data
+  counterRef.transaction(function (currentValue) {
+    return (currentValue || 0) + 1;  // Increment counter or start at 1
+  }).then(function (result) {
+    const newId = result.snapshot.val();  // Get new incremented ID
+
+    // Store the new data with auto-incremented ID, date, and time
+    database.ref(`${type}/data/${newId}`).set({
       value,
       date,
-      time,
-      sensor // Include the sensor identifier here
-    }).then(() => {
-      // Store the current value in session storage for future reference
-      sessionStorage.setItem(`${type}-last-value`, value.toString());
-    }).catch(function (error) {
-      console.error("Error saving data:", error);
+      time
     });
+
+    console.log(`Saved ${type} data:`, { value, date, time });
+
+    // Optional: Store the current value in session storage to track the last value
+    sessionStorage.setItem(`${type}-last-value`, value.toString());
   }).catch(function (error) {
-    console.error("Error checking last entry:", error);
+    console.error("Error saving data:", error);
   });
 }
+
 
 
 // Chart setup
@@ -201,25 +189,31 @@ function updateNPKChart(snapshot) {
 // Fetch historical data from stored records using auto-incremented IDs
 function fetchHistoricalData() {
   const types = ['moisture_1', 'moisture_2', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
-  
-  types.forEach(type => {
-    // Retrieve all historical data stored under the 'data' key
-    database.ref(`${type}/data`).once('value', function (snapshot) {
-      snapshot.forEach(function (childSnapshot) {
-        let data = childSnapshot.val();
-        let timestamp = childSnapshot.key;  // The auto-incremented ID
-        
-        // Use the data for your purposes (display, chart, etc.)
-        console.log(`${type} at ${timestamp}:`, data);
-        
-        // For NPK data, we will need to update the chart
-        if (['nitrogen', 'phosphorus', 'potassium'].includes(type)) {
-          updateNPKChart({ ref: { key: type }, val: () => data.value });
-        }
-      });
-    });
+
+  types.forEach(async (type) => {
+    try {
+      // Retrieve all historical data stored under the 'data' key
+      const snapshot = await database.ref(`${type}/data`).once('value');
+      const dataRecords = snapshot.val();  // Get all records as an object
+
+      if (dataRecords) {
+        Object.entries(dataRecords).forEach(([id, data]) => {
+          console.log(`${type} at ID ${id}:`, data);  // Log each record
+
+          // If it's NPK data, update the chart
+          if (['nitrogen', 'phosphorus', 'potassium'].includes(type)) {
+            updateNPKChart({ key: type, value: data.value });
+          }
+        });
+      } else {
+        console.log(`No historical data found for ${type}.`);
+      }
+    } catch (error) {
+      console.error(`Error fetching data for ${type}:`, error);
+    }
   });
 }
+
 
 // Modify downloadData to include separate Date and Time columns
 function downloadData() {
