@@ -7,9 +7,10 @@
 #endif
 #include <Firebase_ESP_Client.h>
 #include <ModbusMaster.h>
+#include <SoftwareSerial.h>
 
 // Pin definitions for RS485 communication
-#define RE D4  // Modified RE pin since D4 is used for DHT11
+#define RE D4
 #define DE D3
 
 #define DHTPIN D1
@@ -32,8 +33,14 @@ FirebaseConfig config;
 
 bool signupOK = false;
 
-// Create an instance of the ModbusMaster object
+// Modbus and RS485 communication
 ModbusMaster node;
+SoftwareSerial mod(2, 3); // RX, TX for NPK sensor
+
+const byte nitro[] = {0x01, 0x03, 0x00, 0x1e, 0x00, 0x01, 0xe4, 0x0c};
+const byte phos[] = {0x01, 0x03, 0x00, 0x1f, 0x00, 0x01, 0xb5, 0xcc};
+const byte pota[] = {0x01, 0x03, 0x00, 0x20, 0x00, 0x01, 0x85, 0xc0};
+byte values[11];
 
 void preTransmission() {
   digitalWrite(DE, HIGH);
@@ -43,6 +50,18 @@ void preTransmission() {
 void postTransmission() {
   digitalWrite(DE, LOW);
   digitalWrite(RE, LOW);
+}
+
+byte readNPK(const byte *command) {
+  mod.write(command, 8);
+  delay(1000);
+  if (mod.available() == 11) {
+    for (int i = 0; i < 11; i++) {
+      values[i] = mod.read();
+    }
+    return values[4];  // Return the byte that contains the sensor value
+  }
+  return 0;
 }
 
 void setup() {
@@ -56,7 +75,8 @@ void setup() {
   pinMode(RE, OUTPUT);
 
   // Initialize Modbus communication
-  node.begin(1, Serial);  // 1 is the Modbus slave ID
+  mod.begin(9600);
+  node.begin(2, Serial);
   node.preTransmission(preTransmission);
   node.postTransmission(postTransmission);
 
@@ -104,18 +124,10 @@ void loop() {
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
   int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
 
-  // Get NPK sensor values via RS485
-  uint8_t result;
-  uint16_t data[3];  // Assuming the NPK sensor returns 3 values (N, P, K)
-  
-  result = node.readInputRegisters(0x0000, 3);  // Address and number of registers to read
-  if (result == node.ku8MBSuccess) {
-    data[0] = node.getResponseBuffer(0x00);  // Nitrogen value
-    data[1] = node.getResponseBuffer(0x01);  // Phosphorus value
-    data[2] = node.getResponseBuffer(0x02);  // Potassium value
-  } else {
-    Serial.println("Failed to read from NPK sensor! Check wiring or sensor.");
-  }
+  // Read NPK values
+  byte nitrogenValue = readNPK(nitro);
+  byte phosphorousValue = readNPK(phos);
+  byte potassiumValue = readNPK(pota);
 
   // Send data to Firebase
   if (Firebase.ready() && signupOK) {
@@ -146,27 +158,25 @@ void loop() {
     }
 
     // Send NPK data
-    if (result == node.ku8MBSuccess) {
-      if (Firebase.RTDB.setInt(&fbdo, "NPK/Nitrogen", data[0])) {
-        Serial.print("Nitrogen: ");
-        Serial.println(data[0]);
-      } else {
-        Serial.println("FAILED to send Nitrogen: " + fbdo.errorReason());
-      }
+    if (Firebase.RTDB.setInt(&fbdo, "NPK/Nitrogen", nitrogenValue)) {
+      Serial.print("Nitrogen: ");
+      Serial.println(nitrogenValue);
+    } else {
+      Serial.println("FAILED to send Nitrogen: " + fbdo.errorReason());
+    }
 
-      if (Firebase.RTDB.setInt(&fbdo, "NPK/Phosphorus", data[1])) {
-        Serial.print("Phosphorus: ");
-        Serial.println(data[1]);
-      } else {
-        Serial.println("FAILED to send Phosphorus: " + fbdo.errorReason());
-      }
+    if (Firebase.RTDB.setInt(&fbdo, "NPK/Phosphorous", phosphorousValue)) {
+      Serial.print("Phosphorous: ");
+      Serial.println(phosphorousValue);
+    } else {
+      Serial.println("FAILED to send Phosphorous: " + fbdo.errorReason());
+    }
 
-      if (Firebase.RTDB.setInt(&fbdo, "NPK/Potassium", data[2])) {
-        Serial.print("Potassium: ");
-        Serial.println(data[2]);
-      } else {
-        Serial.println("FAILED to send Potassium: " + fbdo.errorReason());
-      }
+    if (Firebase.RTDB.setInt(&fbdo, "NPK/Potassium", potassiumValue)) {
+      Serial.print("Potassium: ");
+      Serial.println(potassiumValue);
+    } else {
+      Serial.println("FAILED to send Potassium: " + fbdo.errorReason());
     }
   }
 
