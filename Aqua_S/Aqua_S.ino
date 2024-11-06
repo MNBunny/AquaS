@@ -1,4 +1,7 @@
 #include "DHT.h"
+#include <SoftwareSerial.h>
+#include <Wire.h>
+
 #include <Arduino.h>
 #if defined(ESP32)
   #include <WiFi.h>
@@ -6,10 +9,8 @@
   #include <ESP8266WiFi.h>
 #endif
 #include <Firebase_ESP_Client.h>
-#include <ModbusMaster.h>
 
-// Pin definitions for RS485 communication
-#define RE D4  // Modified RE pin since D4 is used for DHT11
+#define RE D4
 #define DE D3
 
 #define DHTPIN D1
@@ -32,33 +33,24 @@ FirebaseConfig config;
 
 bool signupOK = false;
 
-// Create an instance of the ModbusMaster object
-ModbusMaster node;
+const byte code[]= {0x01, 0x03, 0x00, 0x1e, 0x00, 0x03, 0x34, 0x0D};
+const byte nitro[] = {0x01,0x03, 0x00, 0x1e, 0x00, 0x01, 0xB5, 0xCC};
+const byte phos[] = {0x01, 0x03, 0x00, 0x1f, 0x00, 0x01, 0xE4, 0x0C};
+const byte pota[] = {0x01, 0x03, 0x00, 0x20, 0x00, 0x01, 0x85, 0xC0};
 
-void preTransmission() {
-  digitalWrite(DE, HIGH);
-  digitalWrite(RE, HIGH);
-}
-
-void postTransmission() {
-  digitalWrite(DE, LOW);
-  digitalWrite(RE, LOW);
-}
+byte values[11];
+SoftwareSerial mod(D7, D6);
 
 void setup() {
   Serial.begin(9600);
-  
+  mod.begin(9600);
   dht.begin();
   pinMode(DHTPIN, INPUT);
 
   // RS485 communication pin modes
-  pinMode(DE, OUTPUT);
   pinMode(RE, OUTPUT);
+  pinMode(DE, OUTPUT);
 
-  // Initialize Modbus communication
-  node.begin(1, Serial);  // 1 is the Modbus slave ID
-  node.preTransmission(preTransmission);
-  node.postTransmission(postTransmission);
 
   Serial.print("Connecting to Wi-Fi");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -90,6 +82,27 @@ void setup() {
 
 void loop() {
   delay(6000); // Delay between readings
+
+  byte val1,val2,val3,val4;
+  val1 = nitrogen();
+  delay(250);
+  val2 = phosphorous();
+  delay(250);
+  val3 = potassium();
+  delay(250);
+  //  val4 = all();
+  // delay(250);
+
+  Serial.print("Nitrogen: ");
+  Serial.print(val1);
+  Serial.println(" mg/kg");
+  Serial.print("Phosphorous: ");
+  Serial.print(val2);
+  Serial.println(" mg/kg");
+  Serial.print("Potassium: ");
+  Serial.print(val3);
+  Serial.println(" mg/kg");
+  delay(2000);
 
   // Read humidity and temperature from the DHT sensor
   float h = dht.readHumidity();
@@ -171,4 +184,55 @@ void loop() {
   }
 
   Serial.println("______________________________");
+}
+
+byte nitrogen(){
+  digitalWrite(DE,HIGH);
+  digitalWrite(RE,HIGH);
+  delay(10);
+  if(mod.write(nitro,sizeof(nitro))==4){
+    digitalWrite(DE,LOW);
+    digitalWrite(RE,LOW);
+    for(byte i=0;i<7;i++){
+    //Serial.print(mod.read(),HEX);
+    values[i] = mod.read();
+    Serial.print(values[i],HEX);
+    }
+    Serial.println();
+  }
+  return values[4];
+}
+ 
+byte phosphorous(){
+  digitalWrite(DE,HIGH);
+  digitalWrite(RE,HIGH);
+  delay(10);
+  if(mod.write(phos,sizeof(phos))==4){
+    digitalWrite(DE,LOW);
+    digitalWrite(RE,LOW);
+    for(byte i=0;i<7;i++){
+    //Serial.print(mod.read(),HEX);
+    values[i] = mod.read();
+    Serial.print(values[i],HEX);
+    }
+    Serial.println();
+  }
+  return values[4];
+}
+ 
+byte potassium(){
+  digitalWrite(DE,HIGH);
+  digitalWrite(RE,HIGH);
+  delay(10);
+  if(mod.write(pota,sizeof(pota))==8){
+    digitalWrite(DE,LOW);
+    digitalWrite(RE,LOW);
+    for(byte i=0;i<7;i++){
+    //Serial.print(mod.read(),HEX);
+    values[i] = mod.read();
+    Serial.print(values[i],HEX);
+    }
+    Serial.println();
+  }
+  return values[4];
 }
