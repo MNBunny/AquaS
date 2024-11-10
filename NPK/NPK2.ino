@@ -1,7 +1,14 @@
 #include "DHT.h"
 #include <SoftwareSerial.h>
-#include <Wire.h>
 #include <Arduino.h>
+#include <U8g2lib.h>
+
+#ifdef U8X8_HAVE_HW_SPI
+#include <SPI.h>
+#endif
+#ifdef U8X8_HAVE_HW_I2C
+#include <Wire.h>
+#endif
 
 #if defined(ESP32)
   #include <WiFi.h>
@@ -37,6 +44,8 @@ FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
 
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+
 bool signupOK = false;
 byte values[11];
 
@@ -44,6 +53,8 @@ void setup() {
   Serial.begin(9600);
   mod.begin(9600);
   dht.begin();
+  
+  u8g2.begin();
   
   pinMode(DHTPIN, INPUT);
   pinMode(RE, OUTPUT);
@@ -87,19 +98,22 @@ void loop() {
   val3 = potassium();
   delay(250);
 
-  Serial.print("Nitrogen: ");
-  Serial.print(val1);
-  Serial.println(" mg/kg");
+  // Display data on the OLED
+  u8g2.clearBuffer();
+  u8g2.setFont(u8g2_font_ncenB08_tr);
+
+  u8g2.drawStr(1, 10, "NPK Sensor Data");
   
-  Serial.print("Phosphorous: ");
-  Serial.print(val2);
-  Serial.println(" mg/kg");
+  char buffer[20];
+  sprintf(buffer, "Nitrogen: %d mg/kg", val1);
+  u8g2.drawStr(1, 20, buffer);
 
-  Serial.print("Potassium: ");
-  Serial.print(val3);
-  Serial.println(" mg/kg");
-  delay(2000);
+  sprintf(buffer, "Phosphorous: %d mg/kg", val2);
+  u8g2.drawStr(1, 30, buffer);
 
+  sprintf(buffer, "Potassium: %d mg/kg", val3);
+  u8g2.drawStr(1, 40, buffer);
+  
   // Read humidity and temperature from DHT sensor
   float h = dht.readHumidity();
   float t = dht.readTemperature();
@@ -108,7 +122,15 @@ void loop() {
     Serial.println("Failed to read from DHT sensor! Check wiring or sensor.");
     return;
   }
-  
+
+  sprintf(buffer, "Humidity: %.2f %%", h);
+  u8g2.drawStr(1, 50, buffer);
+
+  sprintf(buffer, "Temp: %.2f C", t);
+  u8g2.drawStr(1, 60, buffer);
+
+  u8g2.sendBuffer();
+
   // Read soil moisture
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
   int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
