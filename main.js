@@ -143,21 +143,27 @@ const areaChart = new Chart(ctx, {
               data: [],
               backgroundColor: 'rgba(255, 99, 132, 0.4)',
               borderColor: 'rgba(255, 99, 132, 1)',
-              fill: true
+              fill: true,
+              cubicInterpolationMode: 'monotone',
+              tension: 0.4
           },
           {
               label: 'Phosphorus',
               data: [],
               backgroundColor: 'rgba(54, 162, 235, 0.4)',
               borderColor: 'rgba(54, 162, 235, 1)',
-              fill: true
+              fill: true,
+              cubicInterpolationMode: 'monotone',
+              tension: 0.4
           },
           {
               label: 'Potassium',
               data: [],
               backgroundColor: 'rgba(0, 128, 128, 0.6)',
               borderColor: 'rgba(0, 128, 128, 1)',
-              fill: true
+              fill: true,
+              cubicInterpolationMode: 'monotone',
+              tension: 0.4
           }
       ]
   },
