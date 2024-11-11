@@ -211,11 +211,12 @@ const areaChart = new Chart(ctx, {
   }
 });
 
-// Update NPK Chart function
 function updateNPKChart(snapshot) {
     const dataKey = snapshot.ref.key;
     const value = snapshot.val();
     const timestamp = new Date().toLocaleString();
+    
+    console.log("Updating NPK Chart:", { dataKey, value, timestamp }); // Debugging log
 
     if (dataKey === 'Nitrogen') {
         areaChart.data.datasets[0].data.push(value);
@@ -228,6 +229,7 @@ function updateNPKChart(snapshot) {
     areaChart.data.labels.push(timestamp);
     areaChart.update();
 }
+
 
 
 function fetchHistoricalData() {
