@@ -73,25 +73,10 @@ function fetchData() {
         storeDataInFirebase('temperature', temp);
     });
 
-    // Display NPK values on the page
-    dataRefNPK.nitrogen.on('value', function(snapshot) {
-        const nitr = snapshot.val() || 0;
-        document.getElementById('nitrogen').innerText = `${nitr} ppm`;
-        storeDataInFirebase('nitrogen', nitr);
-    });
-
-    dataRefNPK.phosphorus.on('value', function(snapshot) {
-        const phos = snapshot.val() || 0;
-        document.getElementById('phosphorus').innerText = `${phos} ppm`;
-        storeDataInFirebase('phosphorus', phos);
-    });
-
-    dataRefNPK.potassium.on('value', function(snapshot) {
-        const pota = snapshot.val() || 0;
-        document.getElementById('potassium').innerText = `${pota} ppm`;
-        storeDataInFirebase('potassium', pota);
-    });
-
+    // NPK Data Updates
+    dataRefNPK.nitrogen.on('value', updateNPKChart);
+    dataRefNPK.phosphorus.on('value', updateNPKChart);
+    dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
 function updateSoilMoistureDisplay() {
@@ -139,7 +124,6 @@ function storeDataInFirebase(type, value) {
         console.log(`No change in ${type}. Data not saved.`);
     }
 }
-
 
 function storeSoilMoistureInFirebase(sensor, value) {
     // Call storeDataInFirebase for soil moisture readings
@@ -214,13 +198,12 @@ const areaChart = new Chart(ctx, {
   }
 });
 
+// Update NPK Chart function
 function updateNPKChart(snapshot) {
     const dataKey = snapshot.ref.key;
     const value = snapshot.val();
     const timestamp = new Date().toLocaleString();
-    
-    console.log("Updating NPK Chart:", { dataKey, value, timestamp }); // Debugging log
-
+  
     if (dataKey === 'Nitrogen') {
         areaChart.data.datasets[0].data.push(value);
     } else if (dataKey === 'Phosphorus') {
@@ -228,12 +211,10 @@ function updateNPKChart(snapshot) {
     } else if (dataKey === 'Potassium') {
         areaChart.data.datasets[2].data.push(value);
     }
-
+  
     areaChart.data.labels.push(timestamp);
     areaChart.update();
 }
-
-
 
 function fetchHistoricalData() {
     const types = ['moisture_1', 'moisture_2', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
@@ -243,12 +224,9 @@ function fetchHistoricalData() {
             const dataRecords = snapshot.val();
             if (dataRecords) {
                 Object.entries(dataRecords).forEach(([id, data]) => {
-                    // Check for NPK data types
-                    if (type === 'nitrogen' || type === 'phosphorus' || type === 'potassium') {
-                        // Simulate NPK chart update on page load
+                    if (['nitrogen', 'phosphorus', 'potassium'].includes(type)) {
                         updateNPKChart({ ref: { key: type }, val: () => data.value });
                     }
-                    // Process other sensor data types (moisture, humidity, etc.)
                 });
             }
         } catch (error) {
@@ -256,7 +234,6 @@ function fetchHistoricalData() {
         }
     });
 }
-
 
 
 // Modify downloadData to include separate Date and Time columns
