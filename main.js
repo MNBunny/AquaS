@@ -75,18 +75,21 @@ function fetchData() {
 
     // Display NPK values on the page
     dataRefNPK.nitrogen.on('value', function(snapshot) {
-        const nitrogenValue = snapshot.val();
-        document.getElementById('nitrogen').innerText = `${nitrogenValue} ppm`;
+        const nitr = snapshot.val() || 0;
+        document.getElementById('nitrogen').innerText = `${nitr} ppm`;
+        storeDataInFirebase('nitrogen', nitr);
     });
 
     dataRefNPK.phosphorus.on('value', function(snapshot) {
-        const phosphorusValue = snapshot.val();
-        document.getElementById('phosphorus').innerText = `${phosphorusValue} ppm`;
+        const phos = snapshot.val() || 0;
+        document.getElementById('phosphorus').innerText = `${phos} ppm`;
+        storeDataInFirebase('phosphorus', phos);
     });
 
     dataRefNPK.potassium.on('value', function(snapshot) {
-        const potassiumValue = snapshot.val();
-        document.getElementById('potassium').innerText = `${potassiumValue} ppm`;
+        const pota = snapshot.val() || 0;
+        document.getElementById('potassium').innerText = `${pota} ppm`;
+        storeDataInFirebase('potassium', pota);
     });
 
 }
