@@ -209,49 +209,41 @@ const areaChart = new Chart(ctx, {
 
 // Update NPK Chart function
 function updateNPKChart(snapshot) {
-    var dataKey = snapshot.ref.key;
-    var value = snapshot.val();
-    var timestamp = new Date().toLocaleString();
+    const dataKey = snapshot.ref.key;
+    const value = snapshot.val();
+    const timestamp = new Date().toLocaleString();
   
-    // Check for data source (Loam Soil or Clay Soil) and update accordingly
-    if (dataKey === 'nitrogen') {  // Nitrogen data
+    if (dataKey === 'nitrogen') {
         areaChart.data.datasets[0].data.push(value);
-    } else if (dataKey === 'phosphorus') {  // Phosphorus data
+    } else if (dataKey === 'phosphorus') {
         areaChart.data.datasets[1].data.push(value);
-    } else if (dataKey === 'potassium') {  // Potassium data
+    } else if (dataKey === 'potassium') {
         areaChart.data.datasets[2].data.push(value);
     }
   
     areaChart.data.labels.push(timestamp);
     areaChart.update();
-  }
-
-// Fetch historical data from stored records using auto-incremented IDs
-function fetchHistoricalData() {
-  const types = ['moisture_1', 'moisture_2', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
-
-  types.forEach(async (type) => {
-      try {
-          const snapshot = await database.ref(`${type}/data`).once('value');
-          const dataRecords = snapshot.val();  // Get all records as an object
-
-          if (dataRecords) {
-              Object.entries(dataRecords).forEach(([id, data]) => {
-                  console.log(`${type} at ID ${id}:`, data);  // Log each record
-
-                  // If it's NPK data, update the chart
-                  if (['nitrogen', 'phosphorus', 'potassium'].includes(type)) {
-                      updateNPKChart({ key: type, value: data.value });
-                  }
-              });
-          } else {
-              console.log(`No historical data found for ${type}.`);
-          }
-      } catch (error) {
-          console.error(`Error fetching data for ${type}:`, error);
-      }
-  });
 }
+
+function fetchHistoricalData() {
+    const types = ['moisture_1', 'moisture_2', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
+    types.forEach(async (type) => {
+        try {
+            const snapshot = await database.ref(`${type}/data`).once('value');
+            const dataRecords = snapshot.val();
+            if (dataRecords) {
+                Object.entries(dataRecords).forEach(([id, data]) => {
+                    if (['nitrogen', 'phosphorus', 'potassium'].includes(type)) {
+                        updateNPKChart({ ref: { key: type }, val: () => data.value });
+                    }
+                });
+            }
+        } catch (error) {
+            console.error(`Error fetching data for ${type}:`, error);
+        }
+    });
+}
+
 
 // Modify downloadData to include separate Date and Time columns
 function downloadData() {
