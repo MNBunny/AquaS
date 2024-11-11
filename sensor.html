@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor</title>
+    
+    <!-- Montserrat Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="grid-container">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="menu-icon" onclick="openSidebar()">
+                <span class="material-icons-outlined">menu</span>
+            </div>
+            <div class="header-left">
+                <!-- Left section can remain empty or add any elements if needed -->
+            </div>
+            <div class="header-right">
+                <!-- CSV Download Button -->
+                <button id="download-button" class="download-btn">Download CSV</button>
+            </div>
+        </header>
+        <!-- End Header -->
+
+        <!-- Sidebar -->
+        <aside id="sidebar">
+            <div class="sidebar-title">
+                <div class="sidebar-brand">
+                    Smart Water Management System
+                </div>
+                <div class="close-button" onclick="closeSidebar()">
+                    <span class="material-icons-outlined">close</span>
+                </div>
+                
+            </div>
+
+            <ul class="sidebar-list">
+                <li class="sidebar-list-item">
+                    <span class="material-icons-outlined">dashboard</span> Dashboard
+                </li>
+                <li class="sidebar-list-item">
+                    <span class="material-symbols-outlined">sensors</span> Sensors
+                </li>
+                <li class="sidebar-list-item">
+                    <a href="#" target="_blank">
+                        <span class="material-icons-outlined">thermostat_auto</span> Temperature
+                    </a>
+                </li>
+            </ul>
+        </aside>
+        <!-- End Sidebar -->
+
+        <!-- Main -->
+        <main class="main-container" id="main-container">
+            <div class="main-title">
+                <h2>DASHBOARD</h2>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="main-content" id="dashboard-content">
+                <h3>Welcome to the Dashboard!</h3>
+                <p>Here you can monitor various sensor readings.</p>
+            </div>
+
+            <!-- Sensor Content -->
+            <div class="main-content hidden" id="sensor-content">
+                <h2>Sensor Readings</h2>
+                <div class="tables">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Soil Moisture 1</th>
+                                <th>Temperature</th>
+                                <th>Humidity</th>
+                                <th>NPK Reading</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td id="soilMoisture1">--</td>
+                                <td id="temperature1">--</td>
+                                <td id="humidity1">--</td>
+                                <td id="npkReading1">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Soil Moisture 2</th>
+                                <th>Temperature</th>
+                                <th>Humidity</th>
+                                <th>NPK Reading</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td id="soilMoisture2">--</td>
+                                <td id="temperature2">--</td>
+                                <td id="humidity2">--</td>
+                                <td id="npkReading2">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <button id="switch-npk-btn" class="switch-npk-btn">Switch NPK Reading</button>
+            </div>
+        </main>
+        <!-- End Main -->
+        
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.11.1/firebase-database.min.js"></script>
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.35.5/apexcharts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <!-- Custom JS -->
+    <script src="main.js"></script>
+</body>
+</html>

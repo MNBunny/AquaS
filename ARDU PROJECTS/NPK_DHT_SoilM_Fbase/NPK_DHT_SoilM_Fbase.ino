@@ -23,13 +23,13 @@
 // Pin definitions
 #define RE D4
 #define DE D3
-#define DHTPIN D1
+#define DHTPIN D5
 #define DHTTYPE DHT11
 #define SOIL_MOISTURE_PIN A0
 
 // WiFi and Firebase credentials
-#define WIFI_SSID "HUAWEI-Zvkm"
-#define WIFI_PASSWORD "jKNK4gmG"
+#define WIFI_SSID "GlobeAtHome_d7d38_2.4"
+#define WIFI_PASSWORD "Jy6YEfHQ"
 #define API_KEY "AIzaSyBdUTGzi9iQ3asge53BP3UfLALtBghNggQ"
 #define DATABASE_URL "https://swmscp-9078d-default-rtdb.firebaseio.com/"
 
@@ -54,9 +54,22 @@ void setup() {
   mod.begin(9600);
   dht.begin();
   
+  u8g2.begin();
+  
   pinMode(DHTPIN, INPUT);
   pinMode(RE, OUTPUT);
   pinMode(DE, OUTPUT);
+
+  u8g2.begin(); // Initialize the U8g2 display
+  u8g2.clearDisplay();
+  u8g2.setCursor(25, 15);
+  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
+  u8g2.drawStr(25, 15, " NPK Sensor");
+  u8g2.setCursor(25, 35);
+  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
+  u8g2.drawStr(25, 35, "Initializing");
+  u8g2.sendBuffer(); // Display the content
+  delay(3000);
 
   // Connect to WiFi
   Serial.print("Connecting to Wi-Fi");
@@ -86,7 +99,7 @@ void setup() {
 }
 
 void loop() {
-  delay(1200000); // Delay between readings
+  delay(6000); // Delay between readings
 
   byte val1, val2, val3;
   val1 = nitrogen();
@@ -95,6 +108,33 @@ void loop() {
   delay(250);
   val3 = potassium();
   delay(250);
+
+  u8g2.clearDisplay();
+  
+  // Display nitrogen
+  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font for text
+  u8g2.setCursor(3, 12);
+  u8g2.print("N: ");
+  u8g2.setCursor(20, 12);
+  u8g2.print(val1);
+  u8g2.setCursor(45, 12);
+  u8g2.print(" mg/kg");
+  
+  // Display phosphorous
+  u8g2.setCursor(3, 22);
+  u8g2.print("P: ");
+  u8g2.setCursor(20, 22);
+  u8g2.print(val2);
+  u8g2.setCursor(45, 22);
+  u8g2.print(" mg/kg");
+  
+  // Display potassium
+  u8g2.setCursor(3, 32);
+  u8g2.print("K: ");
+  u8g2.setCursor(20, 32);
+  u8g2.print(val3);
+  u8g2.setCursor(45, 32);
+  u8g2.print(" mg/kg");
   
   // Read humidity and temperature from DHT sensor
   float h = dht.readHumidity();
@@ -105,9 +145,29 @@ void loop() {
     return;
   }
 
+  // Display humidity and temperature on the OLED screen
+  u8g2.setCursor(3, 42);
+  u8g2.print("Humidity: ");
+  u8g2.setCursor(80, 42);
+  u8g2.print(h, 1);  // Display with 1 decimal point
+
+  u8g2.setCursor(3, 52);
+  u8g2.print("Temp: ");
+  u8g2.setCursor(50, 52);
+  u8g2.print(t, 1);  // Display with 1 decimal point
+
   // Read soil moisture
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
   int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
+
+  // Display soil moisture on the OLED screen
+  u8g2.setCursor(3, 62);
+  u8g2.print("Moisture: ");
+  u8g2.setCursor(80, 62);
+  u8g2.print(soilMoisturePercent);
+  u8g2.print(" %");
+
+  u8g2.sendBuffer(); // Update the display
 
   // Send data to Firebase
   if (Firebase.ready() && signupOK) {
