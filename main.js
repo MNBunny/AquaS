@@ -216,11 +216,11 @@ function updateNPKChart(snapshot) {
     const value = snapshot.val();
     const timestamp = new Date().toLocaleString();
   
-    if (dataKey === 'value') {
+    if (dataKey === 'nitrogen') {
         areaChart.data.datasets[0].data.push(value);
-    } else if (dataKey === 'value') {
+    } else if (dataKey === 'phosphorus') {
         areaChart.data.datasets[1].data.push(value);
-    } else if (dataKey === 'value') {
+    } else if (dataKey === 'potassium') {
         areaChart.data.datasets[2].data.push(value);
     }
   
