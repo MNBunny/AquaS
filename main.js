@@ -155,8 +155,8 @@ const areaChart = new Chart(ctx, {
           {
               label: 'Potassium',
               data: [],
-              backgroundColor: 'rgba(75, 192, 192, 0.4)',
-              borderColor: 'rgba(75, 192, 192, 1)',
+              backgroundColor: 'rgba(0, 128, 128, 0.6)',
+              borderColor: 'rgba(0, 128, 128, 1)',
               fill: true
           }
       ]
