@@ -1,142 +1,166 @@
-#include <SoftwareSerial.h>
+#include <Firebase_ESP_Client.h>
+#include <Arduino.h>
+#include <U8g2lib.h>
+
+#ifdef U8X8_HAVE_HW_SPI
+#include <SPI.h>
+#endif
+#ifdef U8X8_HAVE_HW_I2C
 #include <Wire.h>
- 
+#endif
+
+#if defined(ESP32)
+  #include <WiFi.h>
+#elif defined(ESP8266)
+  #include <ESP8266WiFi.h>
+#endif
+
+
+// Wi-Fi credentials and Firebase configurations
+#define WIFI_SSID "HUAWEI-Zvkm"
+#define WIFI_PASSWORD "jKNK4gmG"
+#define API_KEY "AIzaSyBdUTGzi9iQ3asge53BP3UfLALtBghNggQ"
+#define DATABASE_URL "https://swmscp-9078d-default-rtdb.firebaseio.com/" 
+
+FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
+
+bool signupOK = false;
+
+// Pins definition
 #define RE D4
 #define DE D3
- 
-const byte code[]= {0x01, 0x03, 0x00, 0x1e, 0x00, 0x03, 0x34, 0x0D};
-const byte nitro[] = {0x01,0x03, 0x00, 0x1e, 0x00, 0x01, 0xB5, 0xCC};
-const byte phos[] = {0x01, 0x03, 0x00, 0x1f, 0x00, 0x01, 0xE4, 0x0C};
-const byte pota[] = {0x01, 0x03, 0x00, 0x20, 0x00, 0x01, 0x85, 0xC0};
+#define RELAY1_PIN D1 // Watering relay
+#define RELAY2_PIN D5 // Fertilizer relay
+#define RELAY3_PIN D3 // Mixing relay
+#define RELAY4_PIN D4 // Another function relay (if needed)
 
-byte values[11];
-SoftwareSerial mod(D7, D6);
+#define SOIL_MOISTURE_PIN A0
+
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 void setup() {
   Serial.begin(9600);
-  mod.begin(9600);
-  pinMode(RE, OUTPUT);
-  pinMode(DE, OUTPUT);
   
+  u8g2.begin();
+  
+  u8g2.begin(); // Initialize the U8g2 display
+  u8g2.clearDisplay();
+  u8g2.setCursor(25, 15);
+  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
+  u8g2.drawStr(25, 15, " System Starting");
+  u8g2.sendBuffer(); // Display the content
+  delay(3000);
+
+  // Connect to Wi-Fi
+  Serial.print("Connecting to Wi-Fi");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(300);
+  }
+  
+  Serial.println();
+  Serial.print("Connected with IP: ");
+  Serial.println(WiFi.localIP());
+  
+  // Firebase configuration
+  config.api_key = API_KEY;
+  config.database_url = DATABASE_URL;
+
+  if (Firebase.signUp(&config, &auth, "", "")) {
+    Serial.println("ok");
+    signupOK = true;
+  } else {
+    Serial.printf("%s\n", config.signer.signupError.message.c_str());
+  }
+
+  // Uncomment if using token status callback
+  //config.token_status_callback = tokenStatusCallback; 
+
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
+
+  // Initialize relay pins
+  pinMode(RELAY1_PIN, OUTPUT);
+  pinMode(RELAY2_PIN, OUTPUT);
+  pinMode(RELAY3_PIN, OUTPUT);
+  pinMode(RELAY4_PIN, OUTPUT);
 }
- 
+
 void loop() {
-  byte val1,val2,val3,val4;
-  val1 = nitrogen();
-  delay(250);
-  val2 = phosphorous();
-  delay(250);
-  val3 = potassium();
-  delay(250);
-//  val4 = all();
- // delay(250);
-  
-  
-  Serial.print("Nitrogen: ");
-  Serial.print(val1);
-  Serial.println(" mg/kg");
-  Serial.print("Phosphorous: ");
-  Serial.print(val2);
-  Serial.println(" mg/kg");
-  Serial.print("Potassium: ");
-  Serial.print(val3);
-  Serial.println(" mg/kg");
-  delay(2000);
- 
-}
+  delay(300000);
 
-/*
-byte all() {
-  digitalWrite(DE, HIGH);
-  digitalWrite(RE, HIGH);
-  delay(10);
+  // Reading current soil moisture sensor value
+  int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN); // Get analog reading
+  int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100); // Map to percentage
 
-  // Send NPK read command
-  for (byte i = 0; i < sizeof(code); i++) {
-    mod.write(code[i]);
-  }
+  if (Firebase.ready() && signupOK) {
+    int soilMoisturePercentRealtime = 0;
 
-  delay(10);
-  digitalWrite(DE, LOW);
-  digitalWrite(RE, LOW);
+    // 1st Reading: Get current soil moisture in real-time from Firebase
+    if (Firebase.RTDB.getInt(&fbdo, "SoilMoisture/Percent_1")) {
+      soilMoisturePercentRealtime = fbdo.intData();
+    }
 
-  // Wait for the response
-  while (mod.available() < 9); // Ensure at least 9 bytes are available
-  for (byte i = 0; i < 9; i++) {
-    if (mod.available()) {
-      values[i] = mod.read();
+    if (Firebase.RTDB.getInt(&fbdo, "SoilMoisture/Percent_2")) {
+      soilMoisturePercentRealtime = fbdo.intData();
+    }
+
+    // Send "2nd Reading" of soil moisture to Firebase under a different path
+    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent)) {
+      
+      Serial.print("2nd Soil Moisture Reading Sent: ");
+      Serial.println(soilMoisturePercent);
+    } else {
+      Serial.println("Failed to send 2nd Soil Moisture reading.");
+      Serial.println("REASON: " + fbdo.errorReason());
+    }
+
+    // Display data on OLED
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.print("Soil Moisture: "); 
+    display.print(soilMoisturePercentRealtime); 
+    display.println(" %");
+
+    // Get current time
+    String currentTime = getCurrentTime();
+    display.print("Time: "); 
+    display.println(currentTime);
+    display.display();
+
+    // Immediate watering if soil moisture percent_2 is 10% or less
+    if (soilMoisturePercentRealtime <= 10) { // Water immediately if soil moisture is 10% or less
+      Serial.println("Watering plants immediately due to dryness.");
+      digitalWrite(RELAY1_PIN, HIGH);
+      delay(5000); // Water for 5 seconds
+      digitalWrite(RELAY1_PIN, LOW);
+    }
+    // Do not water if soil moisture percent_2 is 40% or higher
+    else if (soilMoisturePercentRealtime >= 40) { 
+      Serial.println("Soil moisture is sufficient, no watering needed.");
+    }
+
+    // Schedule watering at 5 AM and 5 PM
+    String timeOfDay = currentTime.substring(0, 5); // Get HH:MM from time
+    if (timeOfDay == "05:00" || timeOfDay == "17:00") {
+      Serial.println("Scheduled watering.");
+      digitalWrite(RELAY1_PIN, HIGH);
+      delay(5000); // Water for 5 seconds
+      digitalWrite(RELAY1_PIN, LOW);
     }
   }
 
-  // Extract and print NPK values
-  Serial.println("NPK Sensor Values:");
-  byte nitrogenValue = values[4];  // Nitrogen
-  byte phosphorousValue = values[6]; // Phosphorous
-  byte potassiumValue = values[8];  // Potassium
+  Serial.println("______________________________");
 
-  Serial.print("Nitrogen: ");
-  Serial.print(nitrogenValue);
-  Serial.println(" mg/kg");
-  Serial.print("Phosphorous: ");
-  Serial.print(phosphorousValue);
-  Serial.println(" mg/kg");
-  Serial.print("Potassium: ");
-  Serial.print(potassiumValue);
-  Serial.println(" mg/kg");
-  
-  return nitrogenValue; // Return the nitrogen value or any value you prefer
 }
-*/
 
-
-
-byte nitrogen(){
-  digitalWrite(DE,HIGH);
-  digitalWrite(RE,HIGH);
-  delay(10);
-  if(mod.write(nitro,sizeof(nitro))==4){
-    digitalWrite(DE,LOW);
-    digitalWrite(RE,LOW);
-    for(byte i=0;i<7;i++){
-    //Serial.print(mod.read(),HEX);
-    values[i] = mod.read();
-    Serial.print(values[i],HEX);
-    }
-    Serial.println();
-  }
-  return values[4];
-}
- 
-byte phosphorous(){
-  digitalWrite(DE,HIGH);
-  digitalWrite(RE,HIGH);
-  delay(10);
-  if(mod.write(phos,sizeof(phos))==4){
-    digitalWrite(DE,LOW);
-    digitalWrite(RE,LOW);
-    for(byte i=0;i<7;i++){
-    //Serial.print(mod.read(),HEX);
-    values[i] = mod.read();
-    Serial.print(values[i],HEX);
-    }
-    Serial.println();
-  }
-  return values[4];
-}
- 
-byte potassium(){
-  digitalWrite(DE,HIGH);
-  digitalWrite(RE,HIGH);
-  delay(10);
-  if(mod.write(pota,sizeof(pota))==8){
-    digitalWrite(DE,LOW);
-    digitalWrite(RE,LOW);
-    for(byte i=0;i<7;i++){
-    //Serial.print(mod.read(),HEX);
-    values[i] = mod.read();
-    Serial.print(values[i],HEX);
-    }
-    Serial.println();
-  }
-  return values[4];
+// Function to get the current time (you can implement this using NTP or RTC)
+String getCurrentTime() {
+  // Dummy implementation for current time; replace with actual time retrieval logic
+  return "12:00"; // Return current time in "HH:MM" format
 }

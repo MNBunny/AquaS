@@ -23,13 +23,13 @@
 // Pin definitions
 #define RE D4
 #define DE D3
-#define DHTPIN D1
+#define DHTPIN D5
 #define DHTTYPE DHT11
 #define SOIL_MOISTURE_PIN A0
 
 // WiFi and Firebase credentials
-#define WIFI_SSID "HUAWEI-Zvkm"
-#define WIFI_PASSWORD "jKNK4gmG"
+#define WIFI_SSID "GlobeAtHome_d7d38_2.4"
+#define WIFI_PASSWORD "Jy6YEfHQ"
 #define API_KEY "AIzaSyBdUTGzi9iQ3asge53BP3UfLALtBghNggQ"
 #define DATABASE_URL "https://swmscp-9078d-default-rtdb.firebaseio.com/"
 
@@ -59,6 +59,17 @@ void setup() {
   pinMode(DHTPIN, INPUT);
   pinMode(RE, OUTPUT);
   pinMode(DE, OUTPUT);
+
+  u8g2.begin(); // Initialize the U8g2 display
+  u8g2.clearDisplay();
+  u8g2.setCursor(25, 15);
+  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
+  u8g2.drawStr(25, 15, " NPK Sensor");
+  u8g2.setCursor(25, 35);
+  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
+  u8g2.drawStr(25, 35, "Initializing");
+  u8g2.sendBuffer(); // Display the content
+  delay(3000);
 
   // Connect to WiFi
   Serial.print("Connecting to Wi-Fi");
@@ -98,21 +109,32 @@ void loop() {
   val3 = potassium();
   delay(250);
 
-  // Display data on the OLED
-  u8g2.clearBuffer();
-  u8g2.setFont(u8g2_font_ncenB08_tr);
-
-  u8g2.drawStr(1, 10, "NPK Sensor Data");
+  u8g2.clearDisplay();
   
-  char buffer[20];
-  sprintf(buffer, "Nitrogen: %d mg/kg", val1);
-  u8g2.drawStr(1, 20, buffer);
-
-  sprintf(buffer, "Phosphorous: %d mg/kg", val2);
-  u8g2.drawStr(1, 30, buffer);
-
-  sprintf(buffer, "Potassium: %d mg/kg", val3);
-  u8g2.drawStr(1, 40, buffer);
+  // Display nitrogen
+  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font for text
+  u8g2.setCursor(3, 12);
+  u8g2.print("N: ");
+  u8g2.setCursor(20, 12);
+  u8g2.print(val1);
+  u8g2.setCursor(45, 12);
+  u8g2.print(" mg/kg");
+  
+  // Display phosphorous
+  u8g2.setCursor(3, 22);
+  u8g2.print("P: ");
+  u8g2.setCursor(20, 22);
+  u8g2.print(val2);
+  u8g2.setCursor(45, 22);
+  u8g2.print(" mg/kg");
+  
+  // Display potassium
+  u8g2.setCursor(3, 32);
+  u8g2.print("K: ");
+  u8g2.setCursor(20, 32);
+  u8g2.print(val3);
+  u8g2.setCursor(45, 32);
+  u8g2.print(" mg/kg");
   
   // Read humidity and temperature from DHT sensor
   float h = dht.readHumidity();
@@ -123,17 +145,29 @@ void loop() {
     return;
   }
 
-  sprintf(buffer, "Humidity: %.2f %%", h);
-  u8g2.drawStr(1, 50, buffer);
+  // Display humidity and temperature on the OLED screen
+  u8g2.setCursor(3, 42);
+  u8g2.print("Humidity: ");
+  u8g2.setCursor(80, 42);
+  u8g2.print(h, 1);  // Display with 1 decimal point
 
-  sprintf(buffer, "Temp: %.2f C", t);
-  u8g2.drawStr(1, 60, buffer);
-
-  u8g2.sendBuffer();
+  u8g2.setCursor(3, 52);
+  u8g2.print("Temp: ");
+  u8g2.setCursor(50, 52);
+  u8g2.print(t, 1);  // Display with 1 decimal point
 
   // Read soil moisture
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
   int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
+
+  // Display soil moisture on the OLED screen
+  u8g2.setCursor(3, 62);
+  u8g2.print("Moisture: ");
+  u8g2.setCursor(80, 62);
+  u8g2.print(soilMoisturePercent);
+  u8g2.print(" %");
+
+  u8g2.sendBuffer(); // Update the display
 
   // Send data to Firebase
   if (Firebase.ready() && signupOK) {
@@ -153,42 +187,54 @@ void loop() {
 void sendFirebaseData(String path, float data, String label, String unit) {
   if (Firebase.RTDB.setFloat(&fbdo, path, data)) {
     Serial.print(label);
-    Serial.print(data);
+    Serial.print(data, 1);  // Display with 1 decimal point
     Serial.println(unit);
   } else {
     Serial.println("FAILED to send " + label + fbdo.errorReason());
   }
 }
 
-byte nitrogen() {
-  return readNPK(nitro);
-}
-
-byte phosphorous() {
-  return readNPK(phos);
-}
-
-byte potassium() {
-  return readNPK(pota);
-}
-
-byte readNPK(const byte command[]) {
-  digitalWrite(DE, HIGH);
-  digitalWrite(RE, HIGH);
+byte nitrogen(){
+  digitalWrite(DE,HIGH);
+  digitalWrite(RE,HIGH);
   delay(10);
-  byte response = 0;
-  
-  if (mod.write(command, sizeof(command)) == 4) {
-    digitalWrite(DE, LOW);
-    digitalWrite(RE, LOW);
-    
-    for (byte i = 0; i < 7; i++) {
-      values[i] = mod.read();
-      Serial.print(values[i], HEX);
+  if(mod.write(nitro,sizeof(nitro))==4){
+    digitalWrite(DE,LOW);
+    digitalWrite(RE,LOW);
+    for(byte i=0;i<7;i++){
+    //Serial.print(mod.read(),HEX);
+    values[i] = mod.read();
     }
-    Serial.println();
-    response = values[4];
   }
-  
-  return response;
+  return values[4];
+}
+ 
+byte phosphorous(){
+  digitalWrite(DE,HIGH);
+  digitalWrite(RE,HIGH);
+  delay(10);
+  if(mod.write(phos,sizeof(phos))==4){
+    digitalWrite(DE,LOW);
+    digitalWrite(RE,LOW);
+    for(byte i=0;i<7;i++){
+    //Serial.print(mod.read(),HEX);
+    values[i] = mod.read();
+    }
+  }
+  return values[4];
+}
+ 
+byte potassium(){
+  digitalWrite(DE,HIGH);
+  digitalWrite(RE,HIGH);
+  delay(10);
+  if(mod.write(pota,sizeof(pota))==8){
+    digitalWrite(DE,LOW);
+    digitalWrite(RE,LOW);
+    for(byte i=0;i<7;i++){
+    //Serial.print(mod.read(),HEX);
+    values[i] = mod.read();
+    }
+  }
+  return values[4];
 }
