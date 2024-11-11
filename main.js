@@ -73,11 +73,12 @@ function fetchData() {
         storeDataInFirebase('temperature', temp);
     });
 
+    /*
     // NPK Data Updates
     dataRefNPK.nitrogen.on('value', updateNPKChart);
     dataRefNPK.phosphorus.on('value', updateNPKChart);
     dataRefNPK.potassium.on('value', updateNPKChart);
-
+*/
     // NPK Data Updates
     dataRefNPK.nitrogen.on('value', function(snapshot) {
         const nitrogenValue = snapshot.val() || 0;
