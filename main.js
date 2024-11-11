@@ -201,10 +201,11 @@ const areaChart = new Chart(ctx, {
 
 // Update NPK Chart function
 function updateNPKChart(snapshot) {
-    const dataKey = snapshot.ref.key;
+    const dataKey = snapshot.ref.key;  // Nitrogen, Phosphorus, Potassium
     const value = snapshot.val();
     const timestamp = new Date().toLocaleString();
-  
+
+    // Ensure we add new data for each nutrient type.
     if (dataKey === 'Nitrogen') {
         areaChart.data.datasets[0].data.push(value);
     } else if (dataKey === 'Phosphorus') {
@@ -212,22 +213,23 @@ function updateNPKChart(snapshot) {
     } else if (dataKey === 'Potassium') {
         areaChart.data.datasets[2].data.push(value);
     }
-  
+
+    // Always update the chart labels to reflect the new data points.
     areaChart.data.labels.push(timestamp);
-    areaChart.update();
+    areaChart.update();  // Re-render the chart
 }
 
+
 function fetchHistoricalData() {
-    const types = ['moisture_1', 'moisture_2', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
+    const types = ['nitrogen', 'phosphorus', 'potassium'];
     types.forEach(async (type) => {
         try {
             const snapshot = await database.ref(`${type}/data`).once('value');
             const dataRecords = snapshot.val();
             if (dataRecords) {
                 Object.entries(dataRecords).forEach(([id, data]) => {
-                    if (['nitrogen', 'phosphorus', 'potassium'].includes(type)) {
-                        updateNPKChart({ ref: { key: type }, val: () => data.value });
-                    }
+                    // Call updateNPKChart with each historical data record
+                    updateNPKChart({ ref: { key: type }, val: () => data.value });
                 });
             }
         } catch (error) {
@@ -235,6 +237,7 @@ function fetchHistoricalData() {
         }
     });
 }
+
 
 
 // Modify downloadData to include separate Date and Time columns
