@@ -125,6 +125,7 @@ function storeDataInFirebase(type, value) {
     }
 }
 
+
 function storeSoilMoistureInFirebase(sensor, value) {
     // Call storeDataInFirebase for soil moisture readings
     storeDataInFirebase(sensor, value);
