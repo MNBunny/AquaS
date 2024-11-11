@@ -32,10 +32,24 @@ var dataRefSoilMoisture1 = database.ref('SoilMoisture/Percent_1');
 var dataRefSoilMoisture2 = database.ref('SoilMoisture/Percent_2');
 var dataRefHumidity = database.ref('DHT/humidity');
 var dataRefTemperature = database.ref('DHT/temperature');
-var dataRefNPK = {
+/*var dataRefNPK = {
+    
   nitrogen: database.ref('NPK/nitrogen'),
   phosphorus: database.ref('NPK/phosphorus'),
   potassium: database.ref('NPK/potassium')
+};*/
+
+var dataRefNPK = {
+    loamSoil: {
+      nitrogen: database.ref('Loam_Soil_4/nitrogen'),
+      phosphorus: database.ref('Loam_Soil_5/phosphorus'),
+      potassium: database.ref('Loam_Soil_6/potassium')
+    },
+    claySoil: {
+      nitrogen: database.ref('clay_soil/4'),
+      phosphorus: database.ref('clay_soil/5'),
+      potassium: database.ref('clay_soil/6')
+    }
 };
 
 let moisture1 = 0;
@@ -70,10 +84,14 @@ function fetchData() {
         storeDataInFirebase('temperature', temp);
     });
 
-    // NPK Data Updates
-    dataRefNPK.nitrogen.on('value', updateNPKChart);
-    dataRefNPK.phosphorus.on('value', updateNPKChart);
-    dataRefNPK.potassium.on('value', updateNPKChart);
+    // NPK Data Updates for Loam Soil and Clay Soil
+    dataRefNPK.loamSoil.nitrogen.on('value', updateNPKChart);
+    dataRefNPK.loamSoil.phosphorus.on('value', updateNPKChart);
+    dataRefNPK.loamSoil.potassium.on('value', updateNPKChart);
+    
+    dataRefNPK.claySoil.nitrogen.on('value', updateNPKChart);
+    dataRefNPK.claySoil.phosphorus.on('value', updateNPKChart);
+    dataRefNPK.claySoil.potassium.on('value', updateNPKChart);
 }
 
 function updateSoilMoistureDisplay() {
@@ -189,23 +207,24 @@ const areaChart = new Chart(ctx, {
   }
 });
 
-// Update chart with NPK data
+// Update NPK Chart function
 function updateNPKChart(snapshot) {
-  var dataKey = snapshot.ref.key;
-  var value = snapshot.val();
-  var timestamp = new Date().toLocaleString();
-
-  if (dataKey === 'nitrogen') {
-      areaChart.data.datasets[0].data.push(value);
-  } else if (dataKey === 'phosphorus') {
-      areaChart.data.datasets[1].data.push(value);
-  } else if (dataKey === 'potassium') {
-      areaChart.data.datasets[2].data.push(value);
+    var dataKey = snapshot.ref.key;
+    var value = snapshot.val();
+    var timestamp = new Date().toLocaleString();
+  
+    // Check for data source (Loam Soil or Clay Soil) and update accordingly
+    if (dataKey === '4') {  // Nitrogen data
+        areaChart.data.datasets[0].data.push(value);
+    } else if (dataKey === '5') {  // Phosphorus data
+        areaChart.data.datasets[1].data.push(value);
+    } else if (dataKey === '6') {  // Potassium data
+        areaChart.data.datasets[2].data.push(value);
+    }
+  
+    areaChart.data.labels.push(timestamp);
+    areaChart.update();
   }
-
-  areaChart.data.labels.push(timestamp);
-  areaChart.update();
-}
 
 // Fetch historical data from stored records using auto-incremented IDs
 function fetchHistoricalData() {
