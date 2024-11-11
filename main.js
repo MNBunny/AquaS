@@ -34,9 +34,9 @@ var dataRefHumidity = database.ref('DHT/humidity');
 var dataRefTemperature = database.ref('DHT/temperature');
 var dataRefNPK = {
     
-  nitrogen: database.ref('NPK/nitrogen'),
-  phosphorus: database.ref('NPK/phosphorus'),
-  potassium: database.ref('NPK/potassium')
+  nitrogen: database.ref('NPK/Nitrogen'),
+  phosphorus: database.ref('NPK/Phosphorus'),
+  potassium: database.ref('NPK/Potassium')
 };
 
 
@@ -198,11 +198,11 @@ function updateNPKChart(snapshot) {
     const value = snapshot.val();
     const timestamp = new Date().toLocaleString();
   
-    if (dataKey === 'nitrogen') {
+    if (dataKey === 'Nitrogen') {
         areaChart.data.datasets[0].data.push(value);
-    } else if (dataKey === 'phosphorus') {
+    } else if (dataKey === 'Phosphorus') {
         areaChart.data.datasets[1].data.push(value);
-    } else if (dataKey === 'potassium') {
+    } else if (dataKey === 'Potassium') {
         areaChart.data.datasets[2].data.push(value);
     }
   
