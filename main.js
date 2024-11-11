@@ -163,7 +163,7 @@ const areaChart = new Chart(ctx, {
               borderColor: 'rgba(0, 128, 128, 1)',
               fill: true,
               cubicInterpolationMode: 'monotone',
-              tension: 0.4
+              tension: 0.8
           }
       ]
   },
