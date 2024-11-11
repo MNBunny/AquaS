@@ -214,11 +214,11 @@ function updateNPKChart(snapshot) {
     var timestamp = new Date().toLocaleString();
   
     // Check for data source (Loam Soil or Clay Soil) and update accordingly
-    if (dataKey === '4') {  // Nitrogen data
+    if (dataKey === 'nitrogen') {  // Nitrogen data
         areaChart.data.datasets[0].data.push(value);
-    } else if (dataKey === '5') {  // Phosphorus data
+    } else if (dataKey === 'phosphorus') {  // Phosphorus data
         areaChart.data.datasets[1].data.push(value);
-    } else if (dataKey === '6') {  // Potassium data
+    } else if (dataKey === 'potassium') {  // Potassium data
         areaChart.data.datasets[2].data.push(value);
     }
   
