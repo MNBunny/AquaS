@@ -32,25 +32,14 @@ var dataRefSoilMoisture1 = database.ref('SoilMoisture/Percent_1');
 var dataRefSoilMoisture2 = database.ref('SoilMoisture/Percent_2');
 var dataRefHumidity = database.ref('DHT/humidity');
 var dataRefTemperature = database.ref('DHT/temperature');
-/*var dataRefNPK = {
+var dataRefNPK = {
     
   nitrogen: database.ref('NPK/nitrogen'),
   phosphorus: database.ref('NPK/phosphorus'),
   potassium: database.ref('NPK/potassium')
-};*/
-
-var dataRefNPK = {
-    loamSoil: {
-      nitrogen: database.ref('Loam_Soil_4/nitrogen'),
-      phosphorus: database.ref('Loam_Soil_5/phosphorus'),
-      potassium: database.ref('Loam_Soil_6/potassium')
-    },
-    claySoil: {
-      nitrogen: database.ref('clay_soil/4'),
-      phosphorus: database.ref('clay_soil/5'),
-      potassium: database.ref('clay_soil/6')
-    }
 };
+
+
 
 let moisture1 = 0;
 let moisture2 = 0;
@@ -58,16 +47,16 @@ let moisture2 = 0;
 function fetchData() {
     // Soil Moisture Sensor 1
     dataRefSoilMoisture1.on('value', function (snapshot) {
-        moisture1 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
+        moisture1 = parseFloat(snapshot.val()) || 0;
         updateSoilMoistureDisplay();
-        storeSoilMoistureInFirebase('moisture1', moisture1); // Save moisture1 to Firebase
+        storeSoilMoistureInFirebase('moisture1', moisture1);
     });
 
     // Soil Moisture Sensor 2
     dataRefSoilMoisture2.on('value', function (snapshot) {
-        moisture2 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
+        moisture2 = parseFloat(snapshot.val()) || 0;
         updateSoilMoistureDisplay();
-        storeSoilMoistureInFirebase('moisture2', moisture2); // Save moisture2 to Firebase
+        storeSoilMoistureInFirebase('moisture2', moisture2);
     });
 
     // Humidity
@@ -84,14 +73,10 @@ function fetchData() {
         storeDataInFirebase('temperature', temp);
     });
 
-    // NPK Data Updates for Loam Soil and Clay Soil
-    dataRefNPK.loamSoil.nitrogen.on('value', updateNPKChart);
-    dataRefNPK.loamSoil.phosphorus.on('value', updateNPKChart);
-    dataRefNPK.loamSoil.potassium.on('value', updateNPKChart);
-    
-    dataRefNPK.claySoil.nitrogen.on('value', updateNPKChart);
-    dataRefNPK.claySoil.phosphorus.on('value', updateNPKChart);
-    dataRefNPK.claySoil.potassium.on('value', updateNPKChart);
+    // NPK Data Updates
+    dataRefNPK.nitrogen.on('value', updateNPKChart);
+    dataRefNPK.phosphorus.on('value', updateNPKChart);
+    dataRefNPK.potassium.on('value', updateNPKChart);
 }
 
 function updateSoilMoistureDisplay() {
