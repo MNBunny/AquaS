@@ -27,6 +27,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 var database = firebase.database();
 
+/*
 // References to data
 var dataRefSoilMoisture1 = database.ref('SoilMoisture/Percent_1');
 var dataRefSoilMoisture2 = database.ref('SoilMoisture/Percent_2');
@@ -38,12 +39,12 @@ var dataRefNPK = {
   phosphorus: database.ref('NPK/Phosphorus'),
   potassium: database.ref('NPK/Potassium')
 };
-
+*/
 var dataRefNPK = {
     loamSoil: {
-        nitrogen: database.ref('Loam_Soil_4/nitrogen'),
-        phosphorus: database.ref('Loam_Soil_5/phosphorus'),
-        potassium: database.ref('Loam_Soil_6/potassium')
+        nitrogen: database.ref('Loam_Soil_4/nitrogen/data/value'),
+        phosphorus: database.ref('Loam_Soil_5/phosphorus/data/value'),
+        potassium: database.ref('Loam_Soil_6/potassium/data/value')
     },
     claySoil: {
         nitrogen: database.ref('Claysoil/NPK/Nitrogen'),
@@ -215,11 +216,11 @@ function updateNPKChart(snapshot) {
     const value = snapshot.val();
     const timestamp = new Date().toLocaleString();
   
-    if (dataKey === 'nitrogen') {
+    if (dataKey === 'value') {
         areaChart.data.datasets[0].data.push(value);
-    } else if (dataKey === 'phosphorus') {
+    } else if (dataKey === 'value') {
         areaChart.data.datasets[1].data.push(value);
-    } else if (dataKey === 'potassium') {
+    } else if (dataKey === 'value') {
         areaChart.data.datasets[2].data.push(value);
     }
   
