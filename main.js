@@ -77,6 +77,26 @@ function fetchData() {
     dataRefNPK.nitrogen.on('value', updateNPKChart);
     dataRefNPK.phosphorus.on('value', updateNPKChart);
     dataRefNPK.potassium.on('value', updateNPKChart);
+
+    // NPK Data Updates
+    dataRefNPK.nitrogen.on('value', function(snapshot) {
+        const nitrogenValue = snapshot.val() || 0;
+        storeDataInFirebase('nitrogen', nitrogenValue);
+        updateNPKChart(snapshot);  // Update the chart
+    });
+
+    dataRefNPK.phosphorus.on('value', function(snapshot) {
+        const phosphorusValue = snapshot.val() || 0;
+        storeDataInFirebase('phosphorus', phosphorusValue);
+        updateNPKChart(snapshot);  // Update the chart
+    });
+
+    dataRefNPK.potassium.on('value', function(snapshot) {
+        const potassiumValue = snapshot.val() || 0;
+        storeDataInFirebase('potassium', potassiumValue);
+        updateNPKChart(snapshot);  // Update the chart
+    });
+
 }
 
 function updateSoilMoistureDisplay() {
@@ -106,12 +126,21 @@ function storeDataInFirebase(type, value) {
         }).then(function (result) {
             const newId = result.snapshot.val();  // Get new incremented ID
 
-            // Store the new data with auto-incremented ID, date, and time
-            database.ref(`${type}/data/${newId}`).set({
-                value,
-                date,
-                time
-            });
+            // Save data for NPK (Nitrogen, Phosphorus, Potassium) in Firebase under NPK parent node
+            if (type === 'nitrogen' || type === 'phosphorus' || type === 'potassium') {
+                database.ref(`${type}/data/${newId}`).set({
+                    value,
+                    date,
+                    time
+                });
+            } else {
+                // Save general sensor data (like humidity, temperature, soil moisture)
+                database.ref(`${type}/data/${newId}`).set({
+                    value,
+                    date,
+                    time
+                });
+            }
 
             console.log(`Saved ${type} data:`, { value, date, time });
 
@@ -124,6 +153,7 @@ function storeDataInFirebase(type, value) {
         console.log(`No change in ${type}. Data not saved.`);
     }
 }
+
 
 
 function storeSoilMoistureInFirebase(sensor, value) {
