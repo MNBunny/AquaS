@@ -84,7 +84,7 @@ void setup() {
 }
 
 void loop() {
-  delay(6000); // Delay 5 minutes (300000ms)
+  delay(1200000); // Delay 20 minutes
 
   // Reading current soil moisture sensor value
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN); // Get analog reading
