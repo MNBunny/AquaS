@@ -233,6 +233,7 @@ const areaChart = new Chart(ctx, {
   }
 });
 
+/*
 // Function to fetch historical data for NPK sensors (Nitrogen, Phosphorus, Potassium)
 function fetchNPKData() {
     const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
@@ -255,7 +256,51 @@ function fetchNPKData() {
             console.error(`Error fetching data for ${type}:`, error);
         }
     });
+}*/
+
+async function fetchNPKData() {
+    const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
+    const chartLabels = new Set(); // Use a Set to store unique timestamps
+
+    try {
+        for (const type of npkTypes) {
+            // Fetch data from Firebase for each NPK type
+            const snapshot = await database.ref(`${type}/data`).once('value');
+            const dataRecords = snapshot.val();
+
+            if (dataRecords) {
+                Object.entries(dataRecords).forEach(([id, data]) => {
+                    const timestamp = new Date(`${data.date} ${data.time}`).toLocaleString();
+
+                    // Check if the timestamp has already been added to avoid duplicates
+                    if (!chartLabels.has(timestamp)) {
+                        chartLabels.add(timestamp);
+                        areaChart.data.labels.push(timestamp); // Add the unique timestamp to labels
+                    }
+
+                    // Update the chart dataset based on NPK type
+                    if (type === 'nitrogen') {
+                        areaChart.data.datasets[0].data.push(data.value);
+                    } else if (type === 'phosphorus') {
+                        areaChart.data.datasets[1].data.push(data.value);
+                    } else if (type === 'potassium') {
+                        areaChart.data.datasets[2].data.push(data.value);
+                    }
+                });
+            }
+        }
+        
+        // Update the chart once after all data is processed
+        areaChart.update();
+    } catch (error) {
+        console.error("Error fetching NPK data:", error);
+    }
 }
+
+// Call this function when the page loads to fetch historical data for NPK
+document.addEventListener("DOMContentLoaded", function () {
+    fetchNPKData();
+});
 
 // Function to update the NPK chart with fetched data
 function updateNPKChart({ ref, val, timestamp }) {
