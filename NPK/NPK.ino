@@ -34,7 +34,7 @@ bool signupOK = false;
 #define RELAY1_PIN D1 // Watering relay
 #define RELAY2_PIN D5 // Fertilizer relay
 #define RELAY3_PIN D3 // Mixing relay
-#define RELAY4_PIN D4 // Another function relay (if needed)
+#define RELAY4_PIN D6 // Another function relay (if needed)
 
 #define SOIL_MOISTURE_PIN A0
 

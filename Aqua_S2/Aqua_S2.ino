@@ -17,7 +17,7 @@
 #endif
 
 // Wi-Fi credentials and Firebase configurations
-#define WIFI_SSID "HUAWEI-Zvkm"
+#define WIFI_SSID "HUAWEI-Zvk"
 #define WIFI_PASSWORD "jKNK4gmG"
 #define API_KEY "AIzaSyBdUTGzi9iQ3asge53BP3UfLALtBghNggQ"
 #define DATABASE_URL "https://swmscp-9078d-default-rtdb.firebaseio.com/"
@@ -29,12 +29,10 @@ FirebaseConfig config;
 bool signupOK = false;
 
 // Pins definition
-#define RE D4
-#define DE D3
-#define RELAY1_PIN D1 // Watering relay
+#define RELAY1_PIN D4 // Watering relay
 #define RELAY2_PIN D5 // Fertilizer relay
 #define RELAY3_PIN D3 // Mixing relay
-#define RELAY4_PIN D4 // Another function relay (if needed)
+#define RELAY4_PIN D6 // Another function relay (if needed)
 
 #define SOIL_MOISTURE_PIN A0
 
@@ -86,7 +84,7 @@ void setup() {
 }
 
 void loop() {
-  delay(300000); // Delay 5 minutes (300000ms)
+  delay(1200000); // Delay 20 minutes
 
   // Reading current soil moisture sensor value
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN); // Get analog reading
