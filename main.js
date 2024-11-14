@@ -294,7 +294,6 @@ function fetchHistoricalData() {
         }
     });
 }
-*/
 
 // Modify downloadData to include separate Date and Time columns
 function downloadData() {
