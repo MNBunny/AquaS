@@ -176,8 +176,8 @@ const areaChart = new Chart(ctx, {
           {
               label: 'Nitrogen',
               data: [],
-              backgroundColor: 'rgba(255, 99, 132, 0.6)',
-              borderColor: 'rgba(255, 99, 132, 1)',
+              backgroundColor: 'rgba(255, 154, 139, 0.8)',
+              borderColor: 'rgba(255, 154, 139, 0.8)',
               fill: true,
               cubicInterpolationMode: 'monotone',
               tension: 0.8
@@ -185,8 +185,8 @@ const areaChart = new Chart(ctx, {
           {
               label: 'Phosphorus',
               data: [],
-              backgroundColor: 'rgba(54, 162, 235, 0.6)',
-              borderColor: 'rgba(54, 162, 235, 1)',
+              backgroundColor: 'rgba(133, 193, 233, 0.8)',
+              borderColor: 'rgba(133, 193, 233, 0.8)',
               fill: true,
               cubicInterpolationMode: 'monotone',
               tension: 0.8
@@ -194,8 +194,8 @@ const areaChart = new Chart(ctx, {
           {
               label: 'Potassium',
               data: [],
-              backgroundColor: 'rgba(0, 128, 128, 0.8)',
-              borderColor: 'rgba(0, 128, 128, 1)',
+              backgroundColor: 'rgba(163, 228, 215, 0.8)',
+              borderColor: 'rgba(163, 228, 215, 0.8)',
               fill: true,
               cubicInterpolationMode: 'monotone',
               tension: 0.8
