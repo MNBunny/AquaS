@@ -33,10 +33,13 @@ var dataRefSoilMoisture2 = database.ref('SoilMoisture/Percent_2');
 var dataRefHumidity = database.ref('DHT/humidity');
 var dataRefTemperature = database.ref('DHT/temperature');
 var dataRefNPK = {
-  nitrogen: database.ref('NPK/nitrogen'),
-  phosphorus: database.ref('NPK/phosphorus'),
-  potassium: database.ref('NPK/potassium')
+    
+  nitrogen: database.ref('NPK/Nitrogen'),
+  phosphorus: database.ref('NPK/Phosphorus'),
+  potassium: database.ref('NPK/Potassium')
 };
+
+
 
 let moisture1 = 0;
 let moisture2 = 0;
@@ -44,16 +47,16 @@ let moisture2 = 0;
 function fetchData() {
     // Soil Moisture Sensor 1
     dataRefSoilMoisture1.on('value', function (snapshot) {
-        moisture1 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
+        moisture1 = parseFloat(snapshot.val()) || 0;
         updateSoilMoistureDisplay();
-        storeSoilMoistureInFirebase('moisture1', moisture1); // Save moisture1 to Firebase
+        storeSoilMoistureInFirebase('moisture1', moisture1);
     });
 
     // Soil Moisture Sensor 2
     dataRefSoilMoisture2.on('value', function (snapshot) {
-        moisture2 = parseFloat(snapshot.val()) || 0;  // Ensure it's a number
+        moisture2 = parseFloat(snapshot.val()) || 0;
         updateSoilMoistureDisplay();
-        storeSoilMoistureInFirebase('moisture2', moisture2); // Save moisture2 to Firebase
+        storeSoilMoistureInFirebase('moisture2', moisture2);
     });
 
     // Humidity
@@ -70,10 +73,31 @@ function fetchData() {
         storeDataInFirebase('temperature', temp);
     });
 
+    /*
     // NPK Data Updates
     dataRefNPK.nitrogen.on('value', updateNPKChart);
     dataRefNPK.phosphorus.on('value', updateNPKChart);
     dataRefNPK.potassium.on('value', updateNPKChart);
+*/
+    // NPK Data Updates
+    dataRefNPK.nitrogen.on('value', function(snapshot) {
+        const nitrogenValue = snapshot.val() || 0;
+        storeDataInFirebase('nitrogen', nitrogenValue);
+        updateNPKChart(snapshot);  // Update the chart
+    });
+
+    dataRefNPK.phosphorus.on('value', function(snapshot) {
+        const phosphorusValue = snapshot.val() || 0;
+        storeDataInFirebase('phosphorus', phosphorusValue);
+        updateNPKChart(snapshot);  // Update the chart
+    });
+
+    dataRefNPK.potassium.on('value', function(snapshot) {
+        const potassiumValue = snapshot.val() || 0;
+        storeDataInFirebase('potassium', potassiumValue);
+        updateNPKChart(snapshot);  // Update the chart
+    });
+
 }
 
 function updateSoilMoistureDisplay() {
@@ -103,12 +127,21 @@ function storeDataInFirebase(type, value) {
         }).then(function (result) {
             const newId = result.snapshot.val();  // Get new incremented ID
 
-            // Store the new data with auto-incremented ID, date, and time
-            database.ref(`${type}/data/${newId}`).set({
-                value,
-                date,
-                time
-            });
+            // Save data for NPK (Nitrogen, Phosphorus, Potassium) in Firebase under NPK parent node
+            if (type === 'nitrogen' || type === 'phosphorus' || type === 'potassium') {
+                database.ref(`${type}/data/${newId}`).set({
+                    value,
+                    date,
+                    time
+                });
+            } else {
+                // Save general sensor data (like humidity, temperature, soil moisture)
+                database.ref(`${type}/data/${newId}`).set({
+                    value,
+                    date,
+                    time
+                });
+            }
 
             console.log(`Saved ${type} data:`, { value, date, time });
 
@@ -121,6 +154,8 @@ function storeDataInFirebase(type, value) {
         console.log(`No change in ${type}. Data not saved.`);
     }
 }
+
+
 
 function storeSoilMoistureInFirebase(sensor, value) {
     // Call storeDataInFirebase for soil moisture readings
@@ -138,23 +173,29 @@ const areaChart = new Chart(ctx, {
           {
               label: 'Nitrogen',
               data: [],
-              backgroundColor: 'rgba(255, 99, 132, 0.4)',
+              backgroundColor: 'rgba(255, 99, 132, 0.6)',
               borderColor: 'rgba(255, 99, 132, 1)',
-              fill: true
+              fill: true,
+              cubicInterpolationMode: 'monotone',
+              tension: 0.8
           },
           {
               label: 'Phosphorus',
               data: [],
-              backgroundColor: 'rgba(54, 162, 235, 0.4)',
+              backgroundColor: 'rgba(54, 162, 235, 0.6)',
               borderColor: 'rgba(54, 162, 235, 1)',
-              fill: true
+              fill: true,
+              cubicInterpolationMode: 'monotone',
+              tension: 0.8
           },
           {
               label: 'Potassium',
               data: [],
-              backgroundColor: 'rgba(75, 192, 192, 0.4)',
-              borderColor: 'rgba(75, 192, 192, 1)',
-              fill: true
+              backgroundColor: 'rgba(0, 128, 128, 0.8)',
+              borderColor: 'rgba(0, 128, 128, 1)',
+              fill: true,
+              cubicInterpolationMode: 'monotone',
+              tension: 0.8
           }
       ]
   },
@@ -189,50 +230,75 @@ const areaChart = new Chart(ctx, {
   }
 });
 
-// Update chart with NPK data
-function updateNPKChart(snapshot) {
-  var dataKey = snapshot.ref.key;
-  var value = snapshot.val();
-  var timestamp = new Date().toLocaleString();
+// Function to fetch historical data for NPK sensors (Nitrogen, Phosphorus, Potassium)
+function fetchNPKData() {
+    const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
+    
+    npkTypes.forEach(async (type) => {
+        try {
+            // Fetch data from Firebase for each NPK type
+            const snapshot = await database.ref(`${type}/data`).once('value');
+            const dataRecords = snapshot.val();
+            
+            if (dataRecords) {
+                Object.entries(dataRecords).forEach(([id, data]) => {
+                    const timestamp = new Date(`${data.date} ${data.time}`).toLocaleString();
 
-  if (dataKey === 'nitrogen') {
-      areaChart.data.datasets[0].data.push(value);
-  } else if (dataKey === 'phosphorus') {
-      areaChart.data.datasets[1].data.push(value);
-  } else if (dataKey === 'potassium') {
-      areaChart.data.datasets[2].data.push(value);
-  }
-
-  areaChart.data.labels.push(timestamp);
-  areaChart.update();
+                    // Update the NPK chart with the fetched data
+                    updateNPKChart({ ref: { key: type }, val: () => data.value, timestamp });
+                });
+            }
+        } catch (error) {
+            console.error(`Error fetching data for ${type}:`, error);
+        }
+    });
 }
 
-// Fetch historical data from stored records using auto-incremented IDs
+// Function to update the NPK chart with fetched data
+function updateNPKChart({ ref, val, timestamp }) {
+    const value = val();
+    const dataKey = ref.key;
+
+    // Add the data to the appropriate dataset for the NPK chart
+    if (dataKey === 'nitrogen') {
+        areaChart.data.datasets[0].data.push(value);
+    } else if (dataKey === 'phosphorus') {
+        areaChart.data.datasets[1].data.push(value);
+    } else if (dataKey === 'potassium') {
+        areaChart.data.datasets[2].data.push(value);
+    }
+    
+    // Add the timestamp to the chart labels
+    areaChart.data.labels.push(timestamp);
+    areaChart.update();
+}
+
+// Call this function when the page loads to fetch historical data for NPK
+document.addEventListener("DOMContentLoaded", function () {
+    // Fetch NPK data on page load
+    fetchNPKData();
+});
+
+
 function fetchHistoricalData() {
-  const types = ['moisture_1', 'moisture_2', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
-
-  types.forEach(async (type) => {
-      try {
-          const snapshot = await database.ref(`${type}/data`).once('value');
-          const dataRecords = snapshot.val();  // Get all records as an object
-
-          if (dataRecords) {
-              Object.entries(dataRecords).forEach(([id, data]) => {
-                  console.log(`${type} at ID ${id}:`, data);  // Log each record
-
-                  // If it's NPK data, update the chart
-                  if (['nitrogen', 'phosphorus', 'potassium'].includes(type)) {
-                      updateNPKChart({ key: type, value: data.value });
-                  }
-              });
-          } else {
-              console.log(`No historical data found for ${type}.`);
-          }
-      } catch (error) {
-          console.error(`Error fetching data for ${type}:`, error);
-      }
-  });
+    const types = ['nitrogen', 'phosphorus', 'potassium'];
+    types.forEach(async (type) => {
+        try {
+            const snapshot = await database.ref(`${type}/data`).once('value');
+            const dataRecords = snapshot.val();
+            if (dataRecords) {
+                Object.entries(dataRecords).forEach(([id, data]) => {
+                    // Call updateNPKChart with each historical data record
+                    updateNPKChart({ ref: { key: type }, val: () => data.value });
+                });
+            }
+        } catch (error) {
+            console.error(`Error fetching data for ${type}:`, error);
+        }
+    });
 }
+
+
 
 // Modify downloadData to include separate Date and Time columns
 function downloadData() {

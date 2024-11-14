@@ -1,7 +1,14 @@
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+// Include the necessary libraries
 #include <Firebase_ESP_Client.h>
 #include <Arduino.h>
+#include <U8g2lib.h>
+
+#ifdef U8X8_HAVE_HW_SPI
+#include <SPI.h>
+#endif
+#ifdef U8X8_HAVE_HW_I2C
+#include <Wire.h>
+#endif
 
 #if defined(ESP32)
   #include <WiFi.h>
@@ -9,17 +16,11 @@
   #include <ESP8266WiFi.h>
 #endif
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define OLED_RESET    -1
-
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
 // Wi-Fi credentials and Firebase configurations
-#define WIFI_SSID "HUAWEI-Zvkm"
-#define WIFI_PASSWORD "jKNK4gmG"
+#define WIFI_SSID "GlobeAtHome_d7d38_2.4"
+#define WIFI_PASSWORD "Jy6YEfHQ"
 #define API_KEY "AIzaSyBdUTGzi9iQ3asge53BP3UfLALtBghNggQ"
-#define DATABASE_URL "https://swmscp-9078d-default-rtdb.firebaseio.com/" 
+#define DATABASE_URL "https://swmscp-9078d-default-rtdb.firebaseio.com/"
 
 FirebaseData fbdo;
 FirebaseAuth auth;
@@ -27,22 +28,28 @@ FirebaseConfig config;
 
 bool signupOK = false;
 
-// Relay pin definitions
-#define RELAY1_PIN D1 // Watering relay
+// Pins definition
+#define RELAY1_PIN D4 // Watering relay
 #define RELAY2_PIN D5 // Fertilizer relay
 #define RELAY3_PIN D3 // Mixing relay
-#define RELAY4_PIN D4 // Another function relay (if needed)
+#define RELAY4_PIN D6 // Another function relay (if needed)
 
 #define SOIL_MOISTURE_PIN A0
+
+// Set up the U8g2 display
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 void setup() {
   Serial.begin(9600);
   
-  // Initialize OLED display with correct I2C address
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C, OLED_RESET);
-  display.clearDisplay();
-  display.display();
-  
+  u8g2.begin(); // Initialize the U8g2 display
+  u8g2.clearDisplay();
+  u8g2.setCursor(25, 15);
+  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
+  u8g2.drawStr(25, 15, "System Starting");
+  u8g2.sendBuffer(); // Display the content
+  delay(3000);
+
   // Connect to Wi-Fi
   Serial.print("Connecting to Wi-Fi");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -66,9 +73,6 @@ void setup() {
     Serial.printf("%s\n", config.signer.signupError.message.c_str());
   }
 
-  // Uncomment if using token status callback
-  //config.token_status_callback = tokenStatusCallback; 
-
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
 
@@ -80,7 +84,7 @@ void setup() {
 }
 
 void loop() {
-  delay(300000);
+  delay(1200000); // Delay 20 minutes
 
   // Reading current soil moisture sensor value
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN); // Get analog reading
@@ -100,7 +104,6 @@ void loop() {
 
     // Send "2nd Reading" of soil moisture to Firebase under a different path
     if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent)) {
-      
       Serial.print("2nd Soil Moisture Reading Sent: ");
       Serial.println(soilMoisturePercent);
     } else {
@@ -109,19 +112,20 @@ void loop() {
     }
 
     // Display data on OLED
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.print("Soil Moisture: "); 
-    display.print(soilMoisturePercentRealtime); 
-    display.println(" %");
+    u8g2.clearDisplay(); // Clear the display
+    u8g2.setFont(u8g2_font_ncenB08_tr); // Set font for consistency
+    u8g2.setCursor(3, 12); // Set cursor for first line
+    u8g2.print("Soil Moisture: "); 
+    u8g2.setCursor(80, 12); // Move cursor to display the value
+    u8g2.print(soilMoisturePercentRealtime); // Display soil moisture value
+    u8g2.print(" %");
 
     // Get current time
     String currentTime = getCurrentTime();
-    display.print("Time: "); 
-    display.println(currentTime);
-    display.display();
+    u8g2.setCursor(3, 22); // Set cursor for second line
+    u8g2.print("Time: ");
+    u8g2.print(currentTime); // Display current time
+    u8g2.sendBuffer(); // Send the display buffer to update the OLED
 
     // Immediate watering if soil moisture percent_2 is 10% or less
     if (soilMoisturePercentRealtime <= 10) { // Water immediately if soil moisture is 10% or less
@@ -146,7 +150,6 @@ void loop() {
   }
 
   Serial.println("______________________________");
-
 }
 
 // Function to get the current time (you can implement this using NTP or RTC)

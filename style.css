@@ -163,7 +163,7 @@ body {
 }
 
 .card:first-child {
-    background-color: #81c784; /* Light green */
+    background-color: #73b877; /* Light green */
 }
 
 .card:nth-child(2) {
@@ -192,7 +192,7 @@ body {
 }
 
 .charts-card {
-    background-color: #a5d6a7; /* Light green */
+    background-color: #6ace6e; /* Light green */
     padding: 15px;
     border-radius: 5px;
     box-shadow: 0 6px 7px -4px rgba(0, 0, 0.5, 0.5);
