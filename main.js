@@ -279,7 +279,7 @@ document.addEventListener("DOMContentLoaded", function () {
     fetchNPKData();
 });
 
-
+/*
 function fetchHistoricalData() {
     const types = ['nitrogen', 'phosphorus', 'potassium'];
     types.forEach(async (type) => {
@@ -297,7 +297,7 @@ function fetchHistoricalData() {
         }
     });
 }
-
+*/
 
 
 // Modify downloadData to include separate Date and Time columns
