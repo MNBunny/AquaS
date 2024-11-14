@@ -301,7 +301,7 @@ async function fetchNPKData() {
 document.addEventListener("DOMContentLoaded", function () {
     fetchNPKData();
 });
-
+/*
 // Function to update the NPK chart with fetched data
 function updateNPKChart({ ref, val, timestamp }) {
     const value = val();
