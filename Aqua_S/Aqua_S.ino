@@ -28,7 +28,7 @@
 #define SOIL_MOISTURE_PIN A0
 
 // WiFi and Firebase credentials
-#define WIFI_SSID "HUAWEI-Zvkm"
+#define WIFI_SSID "HUAWEI-Zvk"
 #define WIFI_PASSWORD "jKNK4gmG"
 #define API_KEY "AIzaSyBdUTGzi9iQ3asge53BP3UfLALtBghNggQ"
 #define DATABASE_URL "https://swmscp-9078d-default-rtdb.firebaseio.com/"
