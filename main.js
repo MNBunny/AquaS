@@ -101,10 +101,12 @@ function fetchData() {
 }
 
 function updateSoilMoistureDisplay() {
-    const totalMoisture = moisture1 + moisture2;
-    const averageMoisture = totalMoisture / 2;
+    console.log("Moisture 1:", moisture1);
+    console.log("Moisture 2:", moisture2);
+    const averageMoisture = (moisture1 + moisture2) / 2;
     document.getElementById('soilMoisture').innerHTML = `${averageMoisture}%`;
 }
+
 
 // Call fetchData on page load
 fetchData();
