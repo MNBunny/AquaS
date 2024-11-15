@@ -38,9 +38,65 @@ var dataRefNPK = {
   phosphorus: database.ref('NPK/Phosphorus'),
   potassium: database.ref('NPK/Potassium')
 };
+``
 
+// Delay interval in milliseconds (20 minutes)
+const INTERVAL = 20 * 60 * 1000;
 
+let moisture1 = 0, moisture2 = 0, humi = 0, temp = 0;
+let nitrogenValue = 0, phosphorusValue = 0, potassiumValue = 0;
 
+function fetchData() {
+    // Soil Moisture Sensor 1
+    dataRefSoilMoisture1.on('value', function (snapshot) {
+        moisture1 = parseFloat(snapshot.val()) || 0;
+        updateSoilMoistureDisplay();
+    });
+
+    // Soil Moisture Sensor 2
+    dataRefSoilMoisture2.on('value', function (snapshot) {
+        moisture2 = parseFloat(snapshot.val()) || 0;
+        updateSoilMoistureDisplay();
+    });
+
+    // Humidity
+    dataRefHumidity.on('value', function (snapshot) {
+        humi = snapshot.val() || 0;
+        document.getElementById('humidity').innerHTML = `${humi}%`;
+    });
+
+    // Temperature
+    dataRefTemperature.on('value', function (snapshot) {
+        temp = snapshot.val() || 0;
+        document.getElementById('temperature').innerHTML = `${temp}&#8451;`;
+    });
+
+    // NPK Data
+    dataRefNPK.nitrogen.on('value', function (snapshot) {
+        nitrogenValue = snapshot.val() || 0;
+    });
+
+    dataRefNPK.phosphorus.on('value', function (snapshot) {
+        phosphorusValue = snapshot.val() || 0;
+    });
+
+    dataRefNPK.potassium.on('value', function (snapshot) {
+        potassiumValue = snapshot.val() || 0;
+    });
+
+    // Store data every 20 minutes
+    setInterval(() => {
+        storeDataInFirebase('moisture1', moisture1);
+        storeDataInFirebase('moisture2', moisture2);
+        storeDataInFirebase('humidity', humi);
+        storeDataInFirebase('temperature', temp);
+        storeDataInFirebase('nitrogen', nitrogenValue);
+        storeDataInFirebase('phosphorus', phosphorusValue);
+        storeDataInFirebase('potassium', potassiumValue);
+    }, INTERVAL);
+}
+
+/*
 let moisture1 = 0;
 let moisture2 = 0;
 
@@ -78,7 +134,7 @@ function fetchData() {
     dataRefNPK.nitrogen.on('value', updateNPKChart);
     dataRefNPK.phosphorus.on('value', updateNPKChart);
     dataRefNPK.potassium.on('value', updateNPKChart);
-*/
+
     // NPK Data Updates
     dataRefNPK.nitrogen.on('value', function(snapshot) {
         const nitrogenValue = snapshot.val() || 0;
@@ -99,7 +155,7 @@ function fetchData() {
     });
 
 }
-
+*/
 function updateSoilMoistureDisplay() {
     console.log("Moisture 1:", moisture1);
     console.log("Moisture 2:", moisture2);
