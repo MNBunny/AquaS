@@ -41,7 +41,7 @@ var dataRefNPK = {
 ``
 
 // Delay interval in milliseconds (20 minutes)
-const INTERVAL = 20 * 60 * 1000;
+const INTERVAL = 10 * 60 * 1000;
 
 let moisture1 = 0, moisture2 = 0, humi = 0, temp = 0;
 let nitrogenValue = 0, phosphorusValue = 0, potassiumValue = 0;
