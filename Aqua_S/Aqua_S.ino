@@ -96,7 +96,7 @@ void setup() {
 }
 
 void loop() {
-  delay(1200000); // Delay between readings
+  delay(60000); // Delay between readings
 
   byte val1, val2, val3;
   val1 = nitrogen();
