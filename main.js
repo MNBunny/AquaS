@@ -180,27 +180,27 @@ function fetchData() {
 
     // Humidity
     dataRefHumidity.on('value', function (snapshot) {
-        humi = snapshot.val() || 0;
+        humi = parseFloat(snapshot.val()) || 0;
         document.getElementById('humidity').innerHTML = `${humi}%`;
     });
 
     // Temperature
     dataRefTemperature.on('value', function (snapshot) {
-        temp = snapshot.val() || 0;
+        temp = parseFloat(snapshot.val()) || 0;
         document.getElementById('temperature').innerHTML = `${temp}&#8451;`;
     });
 
     // NPK Data
     dataRefNPK.nitrogen.on('value', function (snapshot) {
-        nitrogenValue = snapshot.val() || 0;
+        nitrogenValue = parseFloat(snapshot.val()) || 0;
     });
 
     dataRefNPK.phosphorus.on('value', function (snapshot) {
-        phosphorusValue = snapshot.val() || 0;
+        phosphorusValue = parseFloat(snapshot.val()) || 0;
     });
 
     dataRefNPK.potassium.on('value', function (snapshot) {
-        potassiumValue = snapshot.val() || 0;
+        potassiumValue = parseFloat(snapshot.val()) || 0;
     });
 
     // Store data every 10 minutes
