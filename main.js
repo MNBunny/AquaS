@@ -159,48 +159,6 @@ function storeDataInFirebase(type, value) {
 }
 */
 
-document.addEventListener("DOMContentLoaded", function () {
-    const menuIcon = document.querySelector('.menu-icon');
-    const sidebar = document.getElementById('sidebar');
-    const closeButton = document.querySelector('.close-button');
-
-    menuIcon.addEventListener('click', function () {
-        console.log("Menu icon clicked");
-        sidebar.classList.toggle('sidebar-responsive');
-    });
-
-    closeButton.addEventListener('click', function () {
-        console.log("Close button clicked");
-        sidebar.classList.remove('sidebar-responsive'); // Close the sidebar
-    });
-});
-
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyBdUTGzi9iQ3asge53BP3UfLALtBghNggQ",
-    authDomain: "swmscp-9078d.firebaseapp.com",
-    projectId: "swmscp-9078d",
-    storageBucket: "swmscp-9078d.appspot.com",
-    messagingSenderId: "952385770431",
-    appId: "1:952385770431:web:927981bfb62d37ccc7870a",
-    measurementId: "G-J3V99FKKD5"
-};
-
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-var database = firebase.database();
-
-// References to data
-var dataRefSoilMoisture1 = database.ref('SoilMoisture/Percent_1');
-var dataRefSoilMoisture2 = database.ref('SoilMoisture/Percent_2');
-var dataRefHumidity = database.ref('DHT/humidity');
-var dataRefTemperature = database.ref('DHT/temperature');
-var dataRefNPK = {
-    nitrogen: database.ref('NPK/Nitrogen'),
-    phosphorus: database.ref('NPK/Phosphorus'),
-    potassium: database.ref('NPK/Potassium')
-};
-
 // Delay interval in milliseconds (20 minutes)
 const INTERVAL = 10 * 60 * 1000; // Changed to 10 minutes
 
