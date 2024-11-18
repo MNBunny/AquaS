@@ -64,7 +64,10 @@ void setup() {
   u8g2.clearDisplay();
   u8g2.setCursor(25, 15);
   u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
-  u8g2.drawStr(25, 15, "Initializing");
+  u8g2.drawStr(25, 15, " NPK Sensor");
+  u8g2.setCursor(25, 35);
+  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
+  u8g2.drawStr(25, 35, "Initializing");
   u8g2.sendBuffer(); // Display the content
   delay(3000);
 
@@ -96,7 +99,7 @@ void setup() {
 }
 
 void loop() {
-  delay(60000); // Delay between readings
+  delay(6000); // Delay between readings
 
   byte val1, val2, val3;
   val1 = nitrogen();

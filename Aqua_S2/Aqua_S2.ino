@@ -2,8 +2,7 @@
 #include <Firebase_ESP_Client.h>
 #include <Arduino.h>
 #include <U8g2lib.h>
-#include <WiFiUdp.h>
-#include <NTPClient.h>
+#include <DHT.h>  // Include the DHT library
 
 #ifdef U8X8_HAVE_HW_SPI
 #include <SPI.h>
@@ -31,19 +30,17 @@ FirebaseConfig config;
 bool signupOK = false;
 
 // Pins definition
-#define RELAY1_PIN D4 // Watering relay
-#define RELAY2_PIN D5 // Fertilizer relay
-#define RELAY3_PIN D3 // Mixing relay
-#define RELAY4_PIN D6 // Another function relay (if needed)
-
+#define RELAY1_PIN D4 
+#define RELAY2_PIN D5 
+#define RELAY3_PIN D3 
+#define RELAY4_PIN D6 
+#define DHTPIN D0
+#define DHTTYPE DHT11
 #define SOIL_MOISTURE_PIN A0
 
-// Set up the U8g2 display
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+DHT dht(DHTPIN, DHTTYPE);  // Initialize DHT11 sensor
 
-// Define NTP client
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", 8 * 3600, 60000); // UTC+8 (Philippine Time), update every 60 seconds
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 void setup() {
   Serial.begin(9600);
@@ -52,7 +49,7 @@ void setup() {
   u8g2.clearDisplay();
   u8g2.setCursor(25, 15);
   u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
-  u8g2.drawStr(25, 15, "Initializing");
+  u8g2.drawStr(25, 15, "System Starting");
   u8g2.sendBuffer(); // Display the content
   delay(3000);
 
@@ -88,19 +85,36 @@ void setup() {
   pinMode(RELAY3_PIN, OUTPUT);
   pinMode(RELAY4_PIN, OUTPUT);
 
-  // Initialize NTP client
-  timeClient.begin();
+  // Initialize DHT sensor
+  dht.begin();
 }
 
 void loop() {
-  delay(60000);  // 10 minutes in milliseconds
+  delay(1200000); // Delay 20 minutes
+
+  // Read humidity and temperature from DHT sensor
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+  
+  if (isnan(h) || isnan(t)) {
+    Serial.println("Failed to read from DHT sensor! Check wiring or sensor.");
+    return;
+  }
+
+  // Display humidity and temperature on the OLED screen
+  u8g2.setCursor(3, 42);
+  u8g2.print("Humidity: ");
+  u8g2.setCursor(80, 42);
+  u8g2.print(h, 1);  // Display with 1 decimal point
+
+  u8g2.setCursor(3, 52);
+  u8g2.print("Temp: ");
+  u8g2.setCursor(50, 52);
+  u8g2.print(t, 1);  // Display with 1 decimal point
 
   // Reading current soil moisture sensor value
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN); // Get analog reading
   int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100); // Map to percentage
-
-  timeClient.update(); // Update NTP client for current time
-  String currentTime = getCurrentTime(); // Fetch the current time
 
   if (Firebase.ready() && signupOK) {
     int soilMoisturePercentRealtime = 0;
@@ -123,30 +137,21 @@ void loop() {
       Serial.println("REASON: " + fbdo.errorReason());
     }
 
-    u8g2.clearDisplay(); // Clear the display once at the beginning
+    // Display data on OLED
+    u8g2.clearDisplay(); // Clear the display
     u8g2.setFont(u8g2_font_ncenB08_tr); // Set font for consistency
-
-    // Display soil moisture percentage
-    u8g2.setCursor(3, 12); // Set cursor for the first line
-    u8g2.print("Moisture: "); 
+    u8g2.setCursor(3, 12); // Set cursor for first line
+    u8g2.print("Soil Moisture: "); 
     u8g2.setCursor(80, 12); // Move cursor to display the value
-    u8g2.print(soilMoisturePercent); // Display soil moisture value
+    u8g2.print(soilMoisturePercentRealtime); // Display soil moisture value
     u8g2.print(" %");
 
-    // Display combined soil moisture percentage
-    u8g2.setCursor(3, 22); // Set cursor for the second line
-    u8g2.print("Cmb Moist: "); 
-    u8g2.setCursor(80, 22); // Move cursor to display the value
-    u8g2.print(soilMoisturePercentRealtime); // Display combined soil moisture value
-    u8g2.print(" %");
-
-    // Display current time
-    u8g2.setCursor(3, 32); // Set cursor for the third line
+    // Get current time
+    String currentTime = getCurrentTime();
+    u8g2.setCursor(3, 22); // Set cursor for second line
     u8g2.print("Time: ");
     u8g2.print(currentTime); // Display current time
-
-    u8g2.sendBuffer(); // Send the display buffer once to update the OLED
-
+    u8g2.sendBuffer(); // Send the display buffer to update the OLED
 
     // Immediate watering if soil moisture percent_2 is 10% or less
     if (soilMoisturePercentRealtime <= 10) { // Water immediately if soil moisture is 10% or less
@@ -173,14 +178,8 @@ void loop() {
   Serial.println("______________________________");
 }
 
-// Function to get the current Philippine time in "HH:MM" format
+// Function to get the current time (you can implement this using NTP or RTC)
 String getCurrentTime() {
-  // Update the NTP time to ensure accuracy
-  timeClient.update();
-  
-  // Extract the HH:MM formatted string directly
-  String formattedTime = timeClient.getFormattedTime().substring(0, 5); // Get only "HH:MM"
-  
-  return formattedTime;
+  // Dummy implementation for current time; replace with actual time retrieval logic
+  return "12:00"; // Return current time in "HH:MM" format
 }
-
