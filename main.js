@@ -235,7 +235,7 @@ const areaChart = new Chart(ctx, {
   }
 });
 
-
+/*
 // Function to fetch historical data for NPK sensors (Nitrogen, Phosphorus, Potassium)
 function fetchNPKData() {
     const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
@@ -260,7 +260,7 @@ function fetchNPKData() {
     });
 }
 
-/*
+
 async function fetchNPKData() {
     const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
     const chartLabels = new Set(); // Use a Set to store unique timestamps
