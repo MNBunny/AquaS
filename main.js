@@ -297,7 +297,7 @@ async function fetchNPKData() {
     }
 }
 
-/
+/*
 // Call this function when the page loads to fetch historical data for NPK
 document.addEventListener("DOMContentLoaded", function () {
     fetchNPKData();
@@ -321,7 +321,7 @@ function updateNPKChart({ ref, val, timestamp }) {
     areaChart.data.labels.push(timestamp);
     areaChart.update();
 }
-
+*/
 // Call this function when the page loads to fetch historical data for NPK
 document.addEventListener("DOMContentLoaded", function () {
     // Fetch NPK data on page load
