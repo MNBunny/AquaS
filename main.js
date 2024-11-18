@@ -79,7 +79,6 @@ function fetchData() {
     dataRefNPK.phosphorus.on('value', updateNPKChart);
     dataRefNPK.potassium.on('value', updateNPKChart);
 
-    
     // NPK Data Updates
     dataRefNPK.nitrogen.on('value', function(snapshot) {
         const nitrogenValue = snapshot.val() || 0;
@@ -98,7 +97,6 @@ function fetchData() {
         storeDataInFirebase('potassium', potassiumValue);
         updateNPKChart(snapshot);  // Update the chart
     });
-    
 
 }
 
@@ -235,7 +233,7 @@ const areaChart = new Chart(ctx, {
   }
 });
 
-
+/*
 // Function to fetch historical data for NPK sensors (Nitrogen, Phosphorus, Potassium)
 function fetchNPKData() {
     const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
@@ -258,9 +256,8 @@ function fetchNPKData() {
             console.error(`Error fetching data for ${type}:`, error);
         }
     });
-}
+}*/
 
-/*
 async function fetchNPKData() {
     const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
     const chartLabels = new Set(); // Use a Set to store unique timestamps
@@ -304,8 +301,6 @@ async function fetchNPKData() {
 document.addEventListener("DOMContentLoaded", function () {
     fetchNPKData();
 });
-*/
-
 
 // Function to update the NPK chart with fetched data
 function updateNPKChart({ ref, val, timestamp }) {
@@ -350,6 +345,7 @@ function fetchHistoricalData() {
         }
     });
 }
+
 
 
 // Modify downloadData to include separate Date and Time columns
