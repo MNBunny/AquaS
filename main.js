@@ -325,9 +325,9 @@ document.addEventListener("DOMContentLoaded", function () {
   document.addEventListener("DOMContentLoaded", function () {
       // Fetch NPK data on page load
       fetchNPKData();
-  });
+  });*/
   
-  /*
+  
   function fetchHistoricalData() {
       const types = ['nitrogen', 'phosphorus', 'potassium'];
       types.forEach(async (type) => {
@@ -345,7 +345,7 @@ document.addEventListener("DOMContentLoaded", function () {
           }
       });
   }
-  */
+  
   
   
   // Modify downloadData to include separate Date and Time columns
