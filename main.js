@@ -322,13 +322,13 @@ function updateNPKChart({ ref, val, timestamp }) {
     areaChart.data.labels.push(timestamp);
     areaChart.update();
 }
-*/
+
 // Call this function when the page loads to fetch historical data for NPK
 document.addEventListener("DOMContentLoaded", function () {
     // Fetch NPK data on page load
     fetchNPKData();
 });
-
+*/
 
 function fetchHistoricalData() {
     const types = ['nitrogen', 'phosphorus', 'potassium'];
