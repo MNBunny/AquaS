@@ -233,7 +233,7 @@ const areaChart = new Chart(ctx, {
   }
 });
 
-/*
+
 // Function to fetch historical data for NPK sensors (Nitrogen, Phosphorus, Potassium)
 function fetchNPKData() {
     const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
@@ -256,8 +256,8 @@ function fetchNPKData() {
             console.error(`Error fetching data for ${type}:`, error);
         }
     });
-}*/
-
+}
+/*
 async function fetchNPKData() {
     const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
     const chartLabels = new Set(); // Use a Set to store unique timestamps
@@ -302,7 +302,7 @@ async function fetchNPKData() {
 document.addEventListener("DOMContentLoaded", function () {
     fetchNPKData();
 });
-
+*/
 /*
 // Function to update the NPK chart with fetched data
 function updateNPKChart({ ref, val, timestamp }) {
@@ -322,13 +322,13 @@ function updateNPKChart({ ref, val, timestamp }) {
     areaChart.data.labels.push(timestamp);
     areaChart.update();
 }
-
+*/
 // Call this function when the page loads to fetch historical data for NPK
 document.addEventListener("DOMContentLoaded", function () {
     // Fetch NPK data on page load
     fetchNPKData();
 });
-*/
+
 
 function fetchHistoricalData() {
     const types = ['nitrogen', 'phosphorus', 'potassium'];
