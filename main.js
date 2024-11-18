@@ -40,7 +40,7 @@ var dataRefNPK = {
 };
 ``
 
-/*
+
 let moisture1 = 0;
 let moisture2 = 0;
 
@@ -73,7 +73,7 @@ function fetchData() {
         storeDataInFirebase('temperature', temp);
     });
 
-    /*
+    
     // NPK Data Updates
     dataRefNPK.nitrogen.on('value', updateNPKChart);
     dataRefNPK.phosphorus.on('value', updateNPKChart);
@@ -157,103 +157,7 @@ function storeDataInFirebase(type, value) {
         console.log(`No change in ${type}. Data not saved.`);
     }
 }
-*/
 
-// Delay interval in milliseconds (20 minutes)
-const INTERVAL = 10 * 60 * 1000; // Changed to 10 minutes
-
-let moisture1 = 0, moisture2 = 0, humi = 0, temp = 0;
-let nitrogenValue = 0, phosphorusValue = 0, potassiumValue = 0;
-
-function fetchData() {
-    // Soil Moisture Sensor 1
-    dataRefSoilMoisture1.on('value', function (snapshot) {
-        moisture1 = parseFloat(snapshot.val()) || 0;
-        updateSoilMoistureDisplay();
-    });
-
-    // Soil Moisture Sensor 2
-    dataRefSoilMoisture2.on('value', function (snapshot) {
-        moisture2 = parseFloat(snapshot.val()) || 0;
-        updateSoilMoistureDisplay();
-    });
-
-    // Humidity
-    dataRefHumidity.on('value', function (snapshot) {
-        humi = parseFloat(snapshot.val()) || 0;
-        document.getElementById('humidity').innerHTML = `${humi}%`;
-    });
-
-    // Temperature
-    dataRefTemperature.on('value', function (snapshot) {
-        temp = parseFloat(snapshot.val()) || 0;
-        document.getElementById('temperature').innerHTML = `${temp}&#8451;`;
-    });
-
-    // NPK Data
-    dataRefNPK.nitrogen.on('value', function (snapshot) {
-        nitrogenValue = parseFloat(snapshot.val()) || 0;
-    });
-
-    dataRefNPK.phosphorus.on('value', function (snapshot) {
-        phosphorusValue = parseFloat(snapshot.val()) || 0;
-    });
-
-    dataRefNPK.potassium.on('value', function (snapshot) {
-        potassiumValue = parseFloat(snapshot.val()) || 0;
-    });
-
-    // Store data every 10 minutes
-    setInterval(() => {
-        storeDataInFirebase('moisture1', moisture1);
-        storeDataInFirebase('moisture2', moisture2);
-        storeDataInFirebase('humidity', humi);
-        storeDataInFirebase('temperature', temp);
-        storeDataInFirebase('nitrogen', nitrogenValue);
-        storeDataInFirebase('phosphorus', phosphorusValue);
-        storeDataInFirebase('potassium', potassiumValue);
-    }, INTERVAL);
-}
-
-function updateSoilMoistureDisplay() {
-    console.log("Moisture 1:", moisture1);
-    console.log("Moisture 2:", moisture2);
-    const averageMoisture = (moisture1 + moisture2) / 2;
-    document.getElementById('soilMoisture').innerHTML = `${averageMoisture}%`;
-}
-
-function storeDataInFirebase(type, value) {
-    console.log(`Storing ${type} data...`);
-    const lastValue = sessionStorage.getItem(`${type}-last-value`);
-
-    if (value.toString() !== lastValue) {
-        const timestamp = new Date();
-        const date = timestamp.toLocaleDateString('en-US', { year: '2-digit', month: '2-digit', day: '2-digit' });
-        const time = timestamp.toLocaleTimeString('en-US', { hour12: false });
-
-        const counterRef = database.ref(`${type}/counter`);
-
-        counterRef.transaction(function (currentValue) {
-            return (currentValue || 0) + 1;
-        }).then(function (result) {
-            const newId = result.snapshot.val();
-            database.ref(`${type}/data/${newId}`).set({
-                value,
-                date,
-                time
-            });
-
-            console.log(`Saved ${type} data:`, { value, date, time });
-            sessionStorage.setItem(`${type}-last-value`, value.toString());
-        }).catch(function (error) {
-            console.error("Error saving data:", error);
-        });
-    } else {
-        console.log(`No change in ${type}. Data not saved.`);
-    }
-}
-
-fetchData();
 
 
 function storeSoilMoistureInFirebase(sensor, value) {
