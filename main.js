@@ -38,7 +38,6 @@ var dataRefNPK = {
   phosphorus: database.ref('NPK/Phosphorus'),
   potassium: database.ref('NPK/Potassium')
 };
-``
 
 
 let moisture1 = 0;
@@ -73,11 +72,12 @@ function fetchData() {
         storeDataInFirebase('temperature', temp);
     });
 
-    
+    /*
     // NPK Data Updates
     dataRefNPK.nitrogen.on('value', updateNPKChart);
     dataRefNPK.phosphorus.on('value', updateNPKChart);
     dataRefNPK.potassium.on('value', updateNPKChart);
+    */
 
     // NPK Data Updates
     dataRefNPK.nitrogen.on('value', function(snapshot) {
