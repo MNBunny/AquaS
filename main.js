@@ -79,7 +79,7 @@ function fetchData() {
     dataRefNPK.phosphorus.on('value', updateNPKChart);
     dataRefNPK.potassium.on('value', updateNPKChart);
 
-    /*
+    
     // NPK Data Updates
     dataRefNPK.nitrogen.on('value', function(snapshot) {
         const nitrogenValue = snapshot.val() || 0;
@@ -98,7 +98,7 @@ function fetchData() {
         storeDataInFirebase('potassium', potassiumValue);
         updateNPKChart(snapshot);  // Update the chart
     });
-    */
+    
 
 }
 
