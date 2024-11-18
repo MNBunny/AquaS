@@ -73,12 +73,6 @@ document.addEventListener("DOMContentLoaded", function () {
           storeDataInFirebase('temperature', temp);
       });
   
-      /*
-      // NPK Data Updates
-      dataRefNPK.nitrogen.on('value', updateNPKChart);
-      dataRefNPK.phosphorus.on('value', updateNPKChart);
-      dataRefNPK.potassium.on('value', updateNPKChart);
-  */
       // NPK Data Updates
       dataRefNPK.nitrogen.on('value', function(snapshot) {
           const nitrogenValue = snapshot.val() || 0;
@@ -233,31 +227,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
   
-  /*
-  // Function to fetch historical data for NPK sensors (Nitrogen, Phosphorus, Potassium)
-  function fetchNPKData() {
-      const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
-      
-      npkTypes.forEach(async (type) => {
-          try {
-              // Fetch data from Firebase for each NPK type
-              const snapshot = await database.ref(`${type}/data`).once('value');
-              const dataRecords = snapshot.val();
-              
-              if (dataRecords) {
-                  Object.entries(dataRecords).forEach(([id, data]) => {
-                      const timestamp = new Date(`${data.date} ${data.time}`).toLocaleString();
-  
-                      // Update the NPK chart with the fetched data
-                      updateNPKChart({ ref: { key: type }, val: () => data.value, timestamp });
-                  });
-              }
-          } catch (error) {
-              console.error(`Error fetching data for ${type}:`, error);
-          }
-      });
-  }*/
-  
   async function fetchNPKData() {
       const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
       const chartLabels = new Set(); // Use a Set to store unique timestamps
@@ -301,32 +270,7 @@ document.addEventListener("DOMContentLoaded", function () {
   document.addEventListener("DOMContentLoaded", function () {
       fetchNPKData();
   });
-  /*
-  // Function to update the NPK chart with fetched data
-  function updateNPKChart({ ref, val, timestamp }) {
-      const value = val();
-      const dataKey = ref.key;
-  
-      // Add the data to the appropriate dataset for the NPK chart
-      if (dataKey === 'nitrogen') {
-          areaChart.data.datasets[0].data.push(value);
-      } else if (dataKey === 'phosphorus') {
-          areaChart.data.datasets[1].data.push(value);
-      } else if (dataKey === 'potassium') {
-          areaChart.data.datasets[2].data.push(value);
-      }
-      
-      // Add the timestamp to the chart labels
-      areaChart.data.labels.push(timestamp);
-      areaChart.update();
-  }
-  
-  // Call this function when the page loads to fetch historical data for NPK
-  document.addEventListener("DOMContentLoaded", function () {
-      // Fetch NPK data on page load
-      fetchNPKData();
-  });*/
-  
+
   
   function fetchHistoricalData() {
       const types = ['nitrogen', 'phosphorus', 'potassium'];
