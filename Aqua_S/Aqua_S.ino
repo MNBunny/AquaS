@@ -28,8 +28,8 @@
 #define SOIL_MOISTURE_PIN A0
 
 // WiFi and Firebase credentials
-#define WIFI_SSID "HUAWEI-Zvk"
-#define WIFI_PASSWORD "jKNK4gmG"
+#define WIFI_SSID "GlobeAtHome_d7d38_2.4"
+#define WIFI_PASSWORD "Jy6YEfHQ"
 #define API_KEY "AIzaSyBdUTGzi9iQ3asge53BP3UfLALtBghNggQ"
 #define DATABASE_URL "https://swmscp-9078d-default-rtdb.firebaseio.com/"
 
@@ -64,10 +64,7 @@ void setup() {
   u8g2.clearDisplay();
   u8g2.setCursor(25, 15);
   u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
-  u8g2.drawStr(25, 15, " NPK Sensor");
-  u8g2.setCursor(25, 35);
-  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
-  u8g2.drawStr(25, 35, "Initializing");
+  u8g2.drawStr(25, 15, "Initializing");
   u8g2.sendBuffer(); // Display the content
   delay(3000);
 
@@ -99,7 +96,7 @@ void setup() {
 }
 
 void loop() {
-  delay(6000); // Delay between readings
+  delay(60000); // Delay between readings
 
   byte val1, val2, val3;
   val1 = nitrogen();
