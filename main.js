@@ -297,13 +297,12 @@ async function fetchNPKData() {
     }
 }
 
-
+/
 // Call this function when the page loads to fetch historical data for NPK
 document.addEventListener("DOMContentLoaded", function () {
     fetchNPKData();
 });
 
-/*
 // Function to update the NPK chart with fetched data
 function updateNPKChart({ ref, val, timestamp }) {
     const value = val();
@@ -328,7 +327,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Fetch NPK data on page load
     fetchNPKData();
 });
-*/
+
 
 function fetchHistoricalData() {
     const types = ['nitrogen', 'phosphorus', 'potassium'];
