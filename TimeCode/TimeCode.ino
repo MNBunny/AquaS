@@ -109,62 +109,72 @@ void setup() {
   pinMode(RELAY4_PIN, OUTPUT);
 }
 
-void loop() 
-{
+unsigned long lastDataSendTime = 0;  // Store the last time data was sent
+const unsigned long dataSendInterval = 20 * 60 * 1000;  // 20 minutes in milliseconds
+int soilMoisturePercent = 0;  // Declare the variable globally
+
+void loop() {
+  // Get the current time from NTP server
   getNTPtime(10);
   showTime(&timeinfo);
 
-  // Read sensor values
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-  
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor! Check wiring or sensor.");
-    return;
+  // Check if 20 minutes have passed since the last data send
+  if (millis() - lastDataSendTime >= dataSendInterval) {
+    // Read sensor values
+    float h = dht.readHumidity();
+    float t = dht.readTemperature();
+
+    if (isnan(h) || isnan(t)) {
+      Serial.println("Failed to read from DHT sensor! Check wiring or sensor.");
+      return;
+    }
+
+    int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
+    int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
+    soilMoisturePercent = constrain(soilMoisturePercent, 0, 100);
+
+    if (Firebase.ready() && signupOK) {
+      if (Firebase.RTDB.setFloat(&fbdo, "DHT/humidity", h) &&
+          Firebase.RTDB.setFloat(&fbdo, "DHT/temperature", t) &&
+          Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent)) {
+        Serial.println("Data Sent to Firebase");
+      } else {
+        Serial.println("Failed to send data to Firebase.");
+      }
+
+      // Display data on OLED
+      u8g2.clearBuffer();
+      u8g2.setFont(u8g2_font_ncenB08_tr);
+      u8g2.setCursor(0, 12);
+      u8g2.print("Humidity: ");
+      u8g2.print(h, 2);
+      u8g2.setCursor(0, 24);
+      u8g2.print("Temperature: ");
+      u8g2.print(t, 2);
+      u8g2.setCursor(0, 36);
+      u8g2.print("Soil Moisture: ");
+      u8g2.print(soilMoisturePercent);
+      u8g2.print(" %");
+      u8g2.sendBuffer();
+    }
+
+    // Update the last data send time
+    lastDataSendTime = millis();
   }
 
-  int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-  int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
-  soilMoisturePercent = constrain(soilMoisturePercent, 0, 100);
-
-  if (Firebase.ready() && signupOK) {
-    if (Firebase.RTDB.setFloat(&fbdo, "DHT/humidity", h) &&
-        Firebase.RTDB.setFloat(&fbdo, "DHT/temperature", t) &&
-        Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent)) {
-      Serial.println("Data Sent to Firebase");
-    } else {
-      Serial.println("Failed to send data to Firebase.");
-    }
-
-    // Display data on OLED
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_ncenB08_tr);
-    u8g2.setCursor(0, 12);
-    u8g2.print("Humidity: ");
-    u8g2.print(h, 2);
-    u8g2.setCursor(0, 24);
-    u8g2.print("Temperature: ");
-    u8g2.print(t, 2);
-    u8g2.setCursor(0, 36);
-    u8g2.print("Soil Moisture: ");
-    u8g2.print(soilMoisturePercent);
-    u8g2.print(" %");
-    u8g2.sendBuffer();
-
-    // Watering logic
-    if (soilMoisturePercent <= 10) {
-      Serial.println("Watering plants immediately due to dryness.");
-      digitalWrite(RELAY1_PIN, HIGH);
-      delay(5000);
-      digitalWrite(RELAY1_PIN, LOW);
-    } else if (timeinfo.tm_hour == 5 || timeinfo.tm_hour == 17) {
-      Serial.println("Scheduled watering.");
-      digitalWrite(RELAY1_PIN, HIGH);
-      delay(5000);
-      digitalWrite(RELAY1_PIN, LOW);
-    } else {
-      Serial.println("No watering needed.");
-    }
+  // Watering logic
+  if (soilMoisturePercent <= 10) {
+    Serial.println("Watering plants immediately due to dryness.");
+    digitalWrite(RELAY1_PIN, HIGH);
+    delay(5000);
+    digitalWrite(RELAY1_PIN, LOW);
+  } else if (timeinfo.tm_hour == 5 || timeinfo.tm_hour == 17) {
+    Serial.println("Scheduled watering.");
+    digitalWrite(RELAY1_PIN, HIGH);
+    delay(5000);
+    digitalWrite(RELAY1_PIN, LOW);
+  } else {
+    Serial.println("No watering needed.");
   }
 
   delay(1000);  // Add a small delay to avoid overwhelming the system
