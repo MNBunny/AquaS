@@ -44,12 +44,16 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 void setup() {
   Serial.begin(9600);
+  dht.begin();
   
-  u8g2.begin(); // Initialize the U8g2 display
+  pinMode(DHTPIN, INPUT);
+  
+  u8g2.begin();
+
   u8g2.clearDisplay();
   u8g2.setCursor(25, 15);
   u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
-  u8g2.drawStr(25, 15, "System Starting");
+  u8g2.drawStr(25, 15, "Initializing");
   u8g2.sendBuffer(); // Display the content
   delay(3000);
 
@@ -84,15 +88,11 @@ void setup() {
   pinMode(RELAY2_PIN, OUTPUT);
   pinMode(RELAY3_PIN, OUTPUT);
   pinMode(RELAY4_PIN, OUTPUT);
-
-  // Initialize DHT sensor
-  dht.begin();
 }
 
 void loop() {
   delay(1200000); // Delay 20 minutes
 
-  // Read humidity and temperature from DHT sensor
   float h = dht.readHumidity();
   float t = dht.readTemperature();
   
@@ -101,16 +101,15 @@ void loop() {
     return;
   }
 
-  // Display humidity and temperature on the OLED screen
   u8g2.setCursor(3, 42);
   u8g2.print("Humidity: ");
   u8g2.setCursor(80, 42);
-  u8g2.print(h, 1);  // Display with 1 decimal point
+  u8g2.print(h, 2);
 
   u8g2.setCursor(3, 52);
   u8g2.print("Temp: ");
   u8g2.setCursor(50, 52);
-  u8g2.print(t, 1);  // Display with 1 decimal point
+  u8g2.print(t, 2);
 
   // Reading current soil moisture sensor value
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN); // Get analog reading
@@ -134,6 +133,22 @@ void loop() {
       Serial.println(soilMoisturePercent);
     } else {
       Serial.println("Failed to send 2nd Soil Moisture reading.");
+      Serial.println("REASON: " + fbdo.errorReason());
+    }
+
+    if (Firebase.RTDB.setInt(&fbdo, "DHT/humidity", h, "Humidity: ", " %")) {
+      Serial.print("Humidity Sent: ");
+      Serial.println(soilMoisturePercent);
+    } else {
+      Serial.println("Failed to send Humidity reading.");
+      Serial.println("REASON: " + fbdo.errorReason());
+    }
+
+    if (Firebase.RTDB.setInt(&fbdo, "DHT/temperature", t, "Temperature: ", " °C")) {
+      Serial.print("Temperature Sent: ");
+      Serial.println(soilMoisturePercent);
+    } else {
+      Serial.println("Failed to send Temperature reading.");
       Serial.println("REASON: " + fbdo.errorReason());
     }
 
