@@ -28,10 +28,10 @@ FirebaseConfig config;
 bool signupOK = false;
 
 // Pins definition
-#define RELAY1_PIN D4
-#define RELAY2_PIN D5
-#define RELAY3_PIN D3
-#define RELAY4_PIN D6
+#define RELAY1_PIN D5
+#define RELAY2_PIN D6
+#define RELAY3_PIN D7
+#define RELAY4_PIN D8
 #define DHTPIN D0
 #define DHTTYPE DHT11
 #define SOIL_MOISTURE_PIN A0
@@ -84,6 +84,12 @@ void setup() {
   pinMode(RELAY2_PIN, OUTPUT);
   pinMode(RELAY3_PIN, OUTPUT);
   pinMode(RELAY4_PIN, OUTPUT);
+
+  // Initialize all relays to OFF
+  digitalWrite(RELAY1_PIN, LOW);
+  digitalWrite(RELAY2_PIN, LOW);
+  digitalWrite(RELAY3_PIN, LOW);
+  digitalWrite(RELAY4_PIN, LOW);
 }
 
 void loop() {
