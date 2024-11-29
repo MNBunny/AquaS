@@ -16,8 +16,8 @@
   #include <ESP8266WiFi.h>
 #endif
 
-#define WIFI_SSID "GlobeAtHome_d7d38_2.4"
-#define WIFI_PASSWORD "Jy6YEfHQ"
+#define WIFI_SSID "HUAWEI-Zvkm"
+#define WIFI_PASSWORD "jKNK4gmG"
 #define API_KEY "AIzaSyBdUTGzi9iQ3asge53BP3UfLALtBghNggQ"
 #define DATABASE_URL "https://swmscp-9078d-default-rtdb.firebaseio.com/"
 
@@ -32,19 +32,13 @@ bool signupOK = false;
 #define RELAY2_PIN D6
 #define RELAY3_PIN D7
 #define RELAY4_PIN D8
-#define DHTPIN D0
-#define DHTTYPE DHT11
 #define SOIL_MOISTURE_PIN A0
 
-DHT dht(DHTPIN, DHTTYPE);
 
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 void setup() {
   Serial.begin(9600);
-  dht.begin();
-  
-  pinMode(DHTPIN, INPUT);
   
   u8g2.begin();
   u8g2.clearBuffer();
@@ -93,15 +87,7 @@ void setup() {
 }
 
 void loop() {
-  delay(1200000); // Delay 20 minutes
-
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-  
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor! Check wiring or sensor.");
-    return;
-  }
+  delay(6000); // Delay 20 minutes
 
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
   int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
@@ -121,19 +107,6 @@ void loop() {
       Serial.println("Failed to send Soil Moisture reading.");
     }
 
-    Firebase.RTDB.setFloat(&fbdo, "DHT/humidity", h);
-    Firebase.RTDB.setFloat(&fbdo, "DHT/temperature", t);
-
-    // Display data on OLED
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_ncenB08_tr);
-    u8g2.setCursor(0, 12);
-    u8g2.print("Humidity: ");
-    u8g2.print(h, 2);
-    u8g2.setCursor(0, 24);
-    u8g2.print("Temperature: ");
-    u8g2.print(t, 2);
-    u8g2.setCursor(0, 36);
     u8g2.print("Soil Moisture: ");
     u8g2.print(soilMoisturePercentRealtime);
     u8g2.print(" %");

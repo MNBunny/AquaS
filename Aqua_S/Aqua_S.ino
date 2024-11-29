@@ -1,3 +1,4 @@
+#include "DHT.h"
 #include <SoftwareSerial.h>
 #include <Arduino.h>
 #include <U8g2lib.h>
@@ -22,6 +23,8 @@
 // Pin definitions
 #define RE D4
 #define DE D3
+#define DHTPIN D5
+#define DHTTYPE DHT11
 #define SOIL_MOISTURE_PIN A0
 
 // WiFi and Firebase credentials
@@ -35,6 +38,7 @@ const byte nitro[] = {0x01, 0x03, 0x00, 0x1e, 0x00, 0x01, 0xB5, 0xCC};
 const byte phos[] = {0x01, 0x03, 0x00, 0x1f, 0x00, 0x01, 0xE4, 0x0C};
 const byte pota[] = {0x01, 0x03, 0x00, 0x20, 0x00, 0x01, 0x85, 0xC0};
 
+DHT dht(DHTPIN, DHTTYPE);
 SoftwareSerial mod(D7, D6);
 FirebaseData fbdo;
 FirebaseAuth auth;
@@ -48,12 +52,15 @@ byte values[11];
 void setup() {
   Serial.begin(9600);
   mod.begin(9600);
+  dht.begin();
   
   u8g2.begin();
   
+  pinMode(DHTPIN, INPUT);
   pinMode(RE, OUTPUT);
   pinMode(DE, OUTPUT);
 
+  u8g2.begin(); // Initialize the U8g2 display
   u8g2.clearDisplay();
   u8g2.setCursor(25, 15);
   u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
@@ -89,7 +96,7 @@ void setup() {
 }
 
 void loop() {
-  delay(6000); // Delay between readings
+  delay(60000); // Delay between readings
 
   byte val1, val2, val3;
   val1 = nitrogen();
@@ -126,14 +133,34 @@ void loop() {
   u8g2.setCursor(45, 32);
   u8g2.print(" mg/kg");
   
+  // Read humidity and temperature from DHT sensor
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+  
+  if (isnan(h) || isnan(t)) {
+    Serial.println("Failed to read from DHT sensor! Check wiring or sensor.");
+    return;
+  }
+
+  // Display humidity and temperature on the OLED screen
+  u8g2.setCursor(3, 42);
+  u8g2.print("Humidity: ");
+  u8g2.setCursor(80, 42);
+  u8g2.print(h, 1);  // Display with 1 decimal point
+
+  u8g2.setCursor(3, 52);
+  u8g2.print("Temp: ");
+  u8g2.setCursor(50, 52);
+  u8g2.print(t, 1);  // Display with 1 decimal point
+
   // Read soil moisture
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
   int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
 
   // Display soil moisture on the OLED screen
-  u8g2.setCursor(3, 42);
+  u8g2.setCursor(3, 62);
   u8g2.print("Moisture: ");
-  u8g2.setCursor(80, 42);
+  u8g2.setCursor(80, 62);
   u8g2.print(soilMoisturePercent);
   u8g2.print(" %");
 
@@ -141,6 +168,8 @@ void loop() {
 
   // Send data to Firebase
   if (Firebase.ready() && signupOK) {
+    sendFirebaseData("DHT/humidity", h, "Humidity: ", " %");
+    sendFirebaseData("DHT/temperature", t, "Temperature: ", " °C");
     sendFirebaseData("SoilMoisture/Percent_1", soilMoisturePercent, "Soil Moisture: ", " %");
 
     // Send NPK data
@@ -162,43 +191,46 @@ void sendFirebaseData(String path, float data, String label, String unit) {
   }
 }
 
-byte nitrogen() {
-  digitalWrite(DE, HIGH);
-  digitalWrite(RE, HIGH);
+byte nitrogen(){
+  digitalWrite(DE,HIGH);
+  digitalWrite(RE,HIGH);
   delay(10);
-  if (mod.write(nitro, sizeof(nitro)) == 4) {
-    digitalWrite(DE, LOW);
-    digitalWrite(RE, LOW);
-    for (byte i = 0; i < 7; i++) {
-      values[i] = mod.read();
+  if(mod.write(nitro,sizeof(nitro))==4){
+    digitalWrite(DE,LOW);
+    digitalWrite(RE,LOW);
+    for(byte i=0;i<7;i++){
+    //Serial.print(mod.read(),HEX);
+    values[i] = mod.read();
     }
   }
   return values[4];
 }
-
-byte phosphorous() {
-  digitalWrite(DE, HIGH);
-  digitalWrite(RE, HIGH);
+ 
+byte phosphorous(){
+  digitalWrite(DE,HIGH);
+  digitalWrite(RE,HIGH);
   delay(10);
-  if (mod.write(phos, sizeof(phos)) == 4) {
-    digitalWrite(DE, LOW);
-    digitalWrite(RE, LOW);
-    for (byte i = 0; i < 7; i++) {
-      values[i] = mod.read();
+  if(mod.write(phos,sizeof(phos))==4){
+    digitalWrite(DE,LOW);
+    digitalWrite(RE,LOW);
+    for(byte i=0;i<7;i++){
+    //Serial.print(mod.read(),HEX);
+    values[i] = mod.read();
     }
   }
   return values[4];
 }
-
-byte potassium() {
-  digitalWrite(DE, HIGH);
-  digitalWrite(RE, HIGH);
+ 
+byte potassium(){
+  digitalWrite(DE,HIGH);
+  digitalWrite(RE,HIGH);
   delay(10);
-  if (mod.write(pota, sizeof(pota)) == 8) {
-    digitalWrite(DE, LOW);
-    digitalWrite(RE, LOW);
-    for (byte i = 0; i < 7; i++) {
-      values[i] = mod.read();
+  if(mod.write(pota,sizeof(pota))==8){
+    digitalWrite(DE,LOW);
+    digitalWrite(RE,LOW);
+    for(byte i=0;i<7;i++){
+    //Serial.print(mod.read(),HEX);
+    values[i] = mod.read();
     }
   }
   return values[4];
