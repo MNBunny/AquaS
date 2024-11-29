@@ -114,19 +114,33 @@ void loop() {
 
     // Watering logic
     String currentTime = getCurrentTime();
-    if (soilMoisturePercentRealtime <= 10) {
-      Serial.println("Watering plants immediately due to dryness.");
-      digitalWrite(RELAY1_PIN, HIGH);
-      delay(5000);
-      digitalWrite(RELAY1_PIN, LOW);
-    } else if (currentTime.startsWith("05:00") || currentTime.startsWith("17:00")) {
-      Serial.println("Scheduled watering.");
-      digitalWrite(RELAY1_PIN, HIGH);
-      delay(5000);
-      digitalWrite(RELAY1_PIN, LOW);
-    } else {
-      Serial.println("No watering needed.");
+    if (soilMoisturePercentRealtime <= 45) {
+    Serial.println("Watering plants immediately due to dryness.");
+    
+    for (int cycle = 0; cycle < 3; cycle++) {
+        digitalWrite(RELAY1_PIN, HIGH); // Turn the pump ON
+        delay(15000);                  // Keep the pump ON for 15 seconds
+        digitalWrite(RELAY1_PIN, LOW); // Turn the pump OFF
+        delay(5000);                   // Pause for 5 seconds
+        
+        // Update soil moisture reading (you need to implement this based on your sensor setup)
+        soilMoisturePercentRealtime = getSoilMoisture(); // Replace with actual sensor reading code
+        
+        // Check if soil moisture has reached the threshold
+        if (soilMoisturePercentRealtime >= 60) {
+            Serial.println("Soil moisture level has reached 60%. Stopping watering.");
+            break; // Exit the loop if moisture is sufficient
+        }
     }
+} else if (currentTime.startsWith("05:00") || currentTime.startsWith("17:00")) {
+    Serial.println("Scheduled watering.");
+    digitalWrite(RELAY1_PIN, HIGH); // Turn the pump ON
+    delay(5000);                    // Keep the pump ON for 5 seconds
+    digitalWrite(RELAY1_PIN, LOW);  // Turn the pump OFF
+} else {
+    Serial.println("No watering needed.");
+}
+
   }
 }
 
