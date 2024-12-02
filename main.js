@@ -291,40 +291,56 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   
   
-  
-  // Modify downloadData to include separate Date and Time columns
   function downloadData() {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "ID,Date,Time,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
   
-    const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
-    const ids = [];  // Array to hold the IDs
+    // Add header for the first sheet (regular data)
+    csvContent += "ID,Date,Time,Moisture1,Moisture2,Humidity,Temperature\n";
   
-    types.forEach(type => {
+    const regularTypes = ['moisture1', 'moisture2', 'humidity', 'temperature'];
+    const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
+  
+    const fetchData = (types, header, callback) => {
+      let csv = header;
+  
+      Promise.all(types.map(type => {
         const dataRef = database.ref(`${type}/data`);
-        dataRef.once('value', (snapshot) => {
-            const dataRecords = snapshot.val();
+        return dataRef.once('value').then(snapshot => {
+          const dataRecords = snapshot.val();
   
-            if (dataRecords) {
-                Object.entries(dataRecords).forEach(([id, data]) => {
-                    ids.push(id); // Collect IDs for download
-  
-                    const row = `${id},${data.date},${data.time},${data.value},${data.value || ''},${data.value || ''},${data.value || ''},${data.value || ''},${data.value || ''}`;
-                    csvContent += row + "\n";
-                });
-            }
+          if (dataRecords) {
+            Object.entries(dataRecords).forEach(([id, data]) => {
+              const row = `${id},${data.date},${data.time},`;
+              if (type.startsWith('moisture')) {
+                csv += row + `${type === 'moisture1' ? data.value : ''},${type === 'moisture2' ? data.value : ''},,,\n`;
+              } else {
+                csv += row + `,,,${type === 'humidity' ? data.value : ''},${type === 'temperature' ? data.value : ''}\n`;
+              }
+            });
+          }
         });
-    });
+      })).then(() => {
+        callback(csv);
+      });
+    };
   
-    // Create a link and trigger download
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "sensor_data.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Fetch regular sensor data
+    fetchData(regularTypes, csvContent, (regularDataCsv) => {
+      csvContent = regularDataCsv;
+  
+      // Fetch NPK data in a similar way but in a different sheet format
+      fetchData(npkTypes, "ID,Date,Time,Nitrogen,Phosphorus,Potassium\n", (npkDataCsv) => {
+        csvContent += "\n\n" + npkDataCsv; // Add NPK data after regular data
+  
+        // Create a link and trigger download
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "sensor_data.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+    });
   }
   
-  // Call fetchHistoricalData on page load
-  fetchHistoricalData();
