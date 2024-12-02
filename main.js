@@ -291,7 +291,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   
   
-  function downloadData() {
+  async function downloadData() {
     let csvContent = "data:text/csv;charset=utf-8,";
   
     // Add header for the first sheet (regular data)
@@ -300,47 +300,63 @@ document.addEventListener("DOMContentLoaded", function () {
     const regularTypes = ['moisture1', 'moisture2', 'humidity', 'temperature'];
     const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
   
-    const fetchData = (types, header, callback) => {
-      let csv = header;
-  
-      Promise.all(types.map(type => {
+    // Helper function to fetch data for a given sensor type
+    async function fetchData(types) {
+      let rows = [];
+      for (const type of types) {
         const dataRef = database.ref(`${type}/data`);
-        return dataRef.once('value').then(snapshot => {
-          const dataRecords = snapshot.val();
+        const snapshot = await dataRef.once('value');
+        const dataRecords = snapshot.val();
   
-          if (dataRecords) {
-            Object.entries(dataRecords).forEach(([id, data]) => {
-              const row = `${id},${data.date},${data.time},`;
-              if (type.startsWith('moisture')) {
-                csv += row + `${type === 'moisture1' ? data.value : ''},${type === 'moisture2' ? data.value : ''},,,\n`;
-              } else {
-                csv += row + `,,,${type === 'humidity' ? data.value : ''},${type === 'temperature' ? data.value : ''}\n`;
-              }
-            });
-          }
-        });
-      })).then(() => {
-        callback(csv);
-      });
-    };
+        if (dataRecords) {
+          Object.entries(dataRecords).forEach(([id, data]) => {
+            const existingRow = rows.find(row => row.id === id);
+            if (!existingRow) {
+              rows.push({
+                id,
+                date: data.date,
+                time: data.time,
+                moisture1: type === 'moisture1' ? data.value : '',
+                moisture2: type === 'moisture2' ? data.value : '',
+                humidity: type === 'humidity' ? data.value : '',
+                temperature: type === 'temperature' ? data.value : '',
+                nitrogen: '',
+                phosphorus: '',
+                potassium: ''
+              });
+            } else {
+              existingRow[type] = data.value;
+            }
+          });
+        }
+      }
+      return rows;
+    }
   
-    // Fetch regular sensor data
-    fetchData(regularTypes, csvContent, (regularDataCsv) => {
-      csvContent = regularDataCsv;
+    // Fetch data for regular sensors and NPK sensors
+    const regularData = await fetchData(regularTypes);
+    const npkData = await fetchData(npkTypes);
   
-      // Fetch NPK data in a similar way but in a different sheet format
-      fetchData(npkTypes, "ID,Date,Time,Nitrogen,Phosphorus,Potassium\n", (npkDataCsv) => {
-        csvContent += "\n\n" + npkDataCsv; // Add NPK data after regular data
-  
-        // Create a link and trigger download
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "sensor_data.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      });
+    // Add rows for regular data
+    regularData.forEach(row => {
+      csvContent += `${row.id},${row.date},${row.time},${row.moisture1},${row.moisture2},${row.humidity},${row.temperature}\n`;
     });
+  
+    // Add header for NPK data
+    csvContent += "\n\nID,Date,Time,Nitrogen,Phosphorus,Potassium\n";
+  
+    // Add rows for NPK data
+    npkData.forEach(row => {
+      csvContent += `${row.id},${row.date},${row.time},${row.nitrogen},${row.phosphorus},${row.potassium}\n`;
+    });
+  
+    // Trigger file download
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "sensor_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
   
