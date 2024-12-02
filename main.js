@@ -2,7 +2,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const menuIcon = document.querySelector('.menu-icon');
     const sidebar = document.getElementById('sidebar');
     const closeButton = document.querySelector('.close-button');
-  
+    const downloadButton = document.getElementById("download-button");
+
+    downloadButton.addEventListener("click", async function () {
+        console.log("Download button clicked");
+        await downloadData(); // Ensure downloadData is asynchronous
+    });
+
     menuIcon.addEventListener('click', function () {
         sidebar.classList.toggle('sidebar-responsive');
     });
