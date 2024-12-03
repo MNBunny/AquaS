@@ -86,8 +86,10 @@ void setup() {
   digitalWrite(RELAY4_PIN, LOW);
 }
 
+bool relay2Activated = false; // Flag to track if Relay 2 has been activated
+
 void loop() {
-  delay(6000); // Delay 20 minutes
+  delay(600000); // Delay 20 minute between readings
 
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
   int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
@@ -95,11 +97,19 @@ void loop() {
 
   if (Firebase.ready() && signupOK) {
     int soilMoisturePercentRealtime = 0;
+    int soilMoisturePercent1 = 0;
 
+    // Read the soil moisture percentage for Percent_2
     if (Firebase.RTDB.getInt(&fbdo, "SoilMoisture/Percent_2")) {
       soilMoisturePercentRealtime = fbdo.intData();
     }
 
+    // Read the soil moisture percentage for Percent_1
+    if (Firebase.RTDB.getInt(&fbdo, "SoilMoisture/Percent_1")) {
+      soilMoisturePercent1 = fbdo.intData();
+    }
+
+    // Send the current soil moisture data to Firebase
     if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent)) {
       Serial.print("Soil Moisture Sent: ");
       Serial.println(soilMoisturePercent);
@@ -107,44 +117,52 @@ void loop() {
       Serial.println("Failed to send Soil Moisture reading.");
     }
 
-    u8g2.print("Soil Moisture: ");
-    u8g2.print(soilMoisturePercentRealtime);
+    // Calculate the average of Percent_1 and Percent_2
+    int averageSoilMoisture = (soilMoisturePercent1 + soilMoisturePercentRealtime) / 2;
+
+
+    u8g2.clearBuffer();
+    u8g2.setFont(u8g2_font_ncenB08_tr);
+    u8g2.drawStr(0, 15, "Avg Moisture:");
+    u8g2.setCursor(95, 15);
+    u8g2.print(averageSoilMoisture);
     u8g2.print(" %");
+
     u8g2.sendBuffer();
 
-    // Watering logic
-    String currentTime = getCurrentTime();
-    if (soilMoisturePercentRealtime <= 45) {
-    Serial.println("Watering plants immediately due to dryness.");
-    
-    for (int cycle = 0; cycle < 3; cycle++) {
+    // Watering logic based on the average soil moisture value
+    if (averageSoilMoisture <= 45) {
+      Serial.println("Watering plants immediately due to dryness.");
+      
+      // If Relay 2 has not been activated yet, turn it on for 15 seconds
+      if (!relay2Activated) {
+        digitalWrite(RELAY2_PIN, HIGH); // Turn on Relay 2 (first step)
+        delay(15000); // Keep Relay 2 on for 15 seconds
+        digitalWrite(RELAY2_PIN, LOW); // Turn off Relay 2
+        relay2Activated = true; // Set the flag to indicate Relay 2 has been activated
+        delay(5000); // Pause for 5 seconds before starting the next step
+      }
+
+      // Cycle process for Relay 1 (water pump)
+      for (int cycle = 0; cycle < 3; cycle++) {
         digitalWrite(RELAY1_PIN, HIGH); // Turn the pump ON
-        delay(15000);                  // Keep the pump ON for 15 seconds
+        delay(15000); // Keep the pump ON for 15 seconds
         digitalWrite(RELAY1_PIN, LOW); // Turn the pump OFF
-        delay(5000);                   // Pause for 5 seconds
+        delay(5000); // Pause for 5 seconds
         
-        // Update soil moisture reading (you need to implement this based on your sensor setup)
-        soilMoisturePercentRealtime = getSoilMoisture(); // Replace with actual sensor reading code
-        
+        // Recalculate the average soil moisture
+        averageSoilMoisture = (soilMoisturePercent1 + soilMoisturePercentRealtime) / 2;
+
         // Check if soil moisture has reached the threshold
-        if (soilMoisturePercentRealtime >= 60) {
-            Serial.println("Soil moisture level has reached 60%. Stopping watering.");
-            break; // Exit the loop if moisture is sufficient
+        if (averageSoilMoisture >= 55) {
+          Serial.println("Soil moisture level has reached 55%. Stopping watering.");
+          break; // Exit the loop if moisture is sufficient
         }
+      }
+    } else {
+      // If soil moisture is above 45%, reset relay2Activated flag
+      relay2Activated = false;
+      Serial.println("No watering needed.");
     }
-} else if (currentTime.startsWith("05:00") || currentTime.startsWith("17:00")) {
-    Serial.println("Scheduled watering.");
-    digitalWrite(RELAY1_PIN, HIGH); // Turn the pump ON
-    delay(5000);                    // Keep the pump ON for 5 seconds
-    digitalWrite(RELAY1_PIN, LOW);  // Turn the pump OFF
-} else {
-    Serial.println("No watering needed.");
-}
-
   }
-}
-
-// Dummy time function
-String getCurrentTime() {
-  return "12:00"; // Replace with real-time retrieval logic
 }
