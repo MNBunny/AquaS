@@ -1,7 +1,7 @@
-#include "DHT.h"
-#include <SoftwareSerial.h>
+#include <Firebase_ESP_Client.h>
 #include <Arduino.h>
 #include <U8g2lib.h>
+#include <DHT.h>
 
 #ifdef U8X8_HAVE_HW_SPI
 #include <SPI.h>
@@ -16,225 +16,153 @@
   #include <ESP8266WiFi.h>
 #endif
 
-#include <Firebase_ESP_Client.h>
-#include "addons/TokenHelper.h"
-#include "addons/RTDBHelper.h"
-
-// Pin definitions
-#define RE D4
-#define DE D3
-#define DHTPIN D5
-#define DHTTYPE DHT11
-#define SOIL_MOISTURE_PIN A0
-
-// WiFi and Firebase credentials
-#define WIFI_SSID "GlobeAtHome_d7d38_2.4"
-#define WIFI_PASSWORD "Jy6YEfHQ"
+#define WIFI_SSID "HUAWEI-Zvkm"
+#define WIFI_PASSWORD "jKNK4gmG"
 #define API_KEY "AIzaSyBdUTGzi9iQ3asge53BP3UfLALtBghNggQ"
 #define DATABASE_URL "https://swmscp-9078d-default-rtdb.firebaseio.com/"
 
-// RS485 commands for NPK sensor
-const byte nitro[] = {0x01, 0x03, 0x00, 0x1e, 0x00, 0x01, 0xB5, 0xCC};
-const byte phos[] = {0x01, 0x03, 0x00, 0x1f, 0x00, 0x01, 0xE4, 0x0C};
-const byte pota[] = {0x01, 0x03, 0x00, 0x20, 0x00, 0x01, 0x85, 0xC0};
-
-DHT dht(DHTPIN, DHTTYPE);
-SoftwareSerial mod(D7, D6);
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
 
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
-
 bool signupOK = false;
-byte values[11];
+
+// Pins definition
+#define RELAY1_PIN D5
+#define RELAY2_PIN D6
+#define RELAY3_PIN D7
+#define RELAY4_PIN D8
+#define SOIL_MOISTURE_PIN A0
+
+
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 void setup() {
   Serial.begin(9600);
-  mod.begin(9600);
-  dht.begin();
   
   u8g2.begin();
-  
-  pinMode(DHTPIN, INPUT);
-  pinMode(RE, OUTPUT);
-  pinMode(DE, OUTPUT);
-
-  u8g2.begin(); // Initialize the U8g2 display
-  u8g2.clearDisplay();
-  u8g2.setCursor(25, 15);
-  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
-  u8g2.drawStr(25, 15, " NPK Sensor");
-  u8g2.setCursor(25, 35);
-  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font
-  u8g2.drawStr(25, 35, "Initializing");
-  u8g2.sendBuffer(); // Display the content
+  u8g2.clearBuffer();
+  u8g2.setFont(u8g2_font_ncenB08_tr);
+  u8g2.drawStr(25, 15, "Initializing...");
+  u8g2.sendBuffer();
   delay(3000);
 
-  // Connect to WiFi
+  // Connect to Wi-Fi
   Serial.print("Connecting to Wi-Fi");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(300);
   }
+  
   Serial.println();
   Serial.print("Connected with IP: ");
   Serial.println(WiFi.localIP());
-
-  // Initialize Firebase
+  
+  // Firebase configuration
   config.api_key = API_KEY;
   config.database_url = DATABASE_URL;
-  
+
   if (Firebase.signUp(&config, &auth, "", "")) {
-    Serial.println("Firebase setup OK");
+    Serial.println("Firebase initialized.");
     signupOK = true;
   } else {
-    Serial.printf("Firebase signup error: %s\n", config.signer.signupError.message.c_str());
+    Serial.printf("Firebase Sign-up Error: %s\n", config.signer.signupError.message.c_str());
   }
 
-  config.token_status_callback = tokenStatusCallback;
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
+
+  // Initialize relay pins
+  pinMode(RELAY1_PIN, OUTPUT);
+  pinMode(RELAY2_PIN, OUTPUT);
+  pinMode(RELAY3_PIN, OUTPUT);
+  pinMode(RELAY4_PIN, OUTPUT);
+
+  // Initialize all relays to OFF
+  digitalWrite(RELAY1_PIN, LOW);
+  digitalWrite(RELAY2_PIN, LOW);
+  digitalWrite(RELAY3_PIN, LOW);
+  digitalWrite(RELAY4_PIN, LOW);
 }
+
+bool relay2Activated = false; // Flag to track if Relay 2 has been activated
 
 void loop() {
-  delay(6000); // Delay between readings
+  delay(600000); // Delay 20 minute between readings
 
-  byte val1, val2, val3;
-  val1 = nitrogen();
-  delay(250);
-  val2 = phosphorous();
-  delay(250);
-  val3 = potassium();
-  delay(250);
-
-  u8g2.clearDisplay();
-  
-  // Display nitrogen
-  u8g2.setFont(u8g2_font_ncenB08_tr); // Set font for text
-  u8g2.setCursor(3, 12);
-  u8g2.print("N: ");
-  u8g2.setCursor(20, 12);
-  u8g2.print(val1);
-  u8g2.setCursor(45, 12);
-  u8g2.print(" mg/kg");
-  
-  // Display phosphorous
-  u8g2.setCursor(3, 22);
-  u8g2.print("P: ");
-  u8g2.setCursor(20, 22);
-  u8g2.print(val2);
-  u8g2.setCursor(45, 22);
-  u8g2.print(" mg/kg");
-  
-  // Display potassium
-  u8g2.setCursor(3, 32);
-  u8g2.print("K: ");
-  u8g2.setCursor(20, 32);
-  u8g2.print(val3);
-  u8g2.setCursor(45, 32);
-  u8g2.print(" mg/kg");
-  
-  // Read humidity and temperature from DHT sensor
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-  
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor! Check wiring or sensor.");
-    return;
-  }
-
-  // Display humidity and temperature on the OLED screen
-  u8g2.setCursor(3, 42);
-  u8g2.print("Humidity: ");
-  u8g2.setCursor(80, 42);
-  u8g2.print(h, 1);  // Display with 1 decimal point
-
-  u8g2.setCursor(3, 52);
-  u8g2.print("Temp: ");
-  u8g2.setCursor(50, 52);
-  u8g2.print(t, 1);  // Display with 1 decimal point
-
-  // Read soil moisture
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
   int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
+  soilMoisturePercent = constrain(soilMoisturePercent, 0, 100);
 
-  // Display soil moisture on the OLED screen
-  u8g2.setCursor(3, 62);
-  u8g2.print("Moisture: ");
-  u8g2.setCursor(80, 62);
-  u8g2.print(soilMoisturePercent);
-  u8g2.print(" %");
-
-  u8g2.sendBuffer(); // Update the display
-
-  // Send data to Firebase
   if (Firebase.ready() && signupOK) {
-    sendFirebaseData("DHT/humidity", h, "Humidity: ", " %");
-    sendFirebaseData("DHT/temperature", t, "Temperature: ", " °C");
-    sendFirebaseData("SoilMoisture/Percent_1", soilMoisturePercent, "Soil Moisture: ", " %");
+    int soilMoisturePercentRealtime = 0;
+    int soilMoisturePercent1 = 0;
 
-    // Send NPK data
-    sendFirebaseData("NPK/Nitrogen", val1, "Nitrogen: ", " mg/kg");
-    sendFirebaseData("NPK/Phosphorus", val2, "Phosphorus: ", " mg/kg");
-    sendFirebaseData("NPK/Potassium", val3, "Potassium: ", " mg/kg");
-  }
+    // Read the soil moisture percentage for Percent_2
+    if (Firebase.RTDB.getInt(&fbdo, "SoilMoisture/Percent_2")) {
+      soilMoisturePercentRealtime = fbdo.intData();
+    }
 
-  Serial.println("______________________________");
-}
+    // Read the soil moisture percentage for Percent_1
+    if (Firebase.RTDB.getInt(&fbdo, "SoilMoisture/Percent_1")) {
+      soilMoisturePercent1 = fbdo.intData();
+    }
 
-void sendFirebaseData(String path, float data, String label, String unit) {
-  if (Firebase.RTDB.setFloat(&fbdo, path, data)) {
-    Serial.print(label);
-    Serial.print(data, 1);  // Display with 1 decimal point
-    Serial.println(unit);
-  } else {
-    Serial.println("FAILED to send " + label + fbdo.errorReason());
-  }
-}
+    // Send the current soil moisture data to Firebase
+    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent)) {
+      Serial.print("Soil Moisture Sent: ");
+      Serial.println(soilMoisturePercent);
+    } else {
+      Serial.println("Failed to send Soil Moisture reading.");
+    }
 
-byte nitrogen(){
-  digitalWrite(DE,HIGH);
-  digitalWrite(RE,HIGH);
-  delay(10);
-  if(mod.write(nitro,sizeof(nitro))==4){
-    digitalWrite(DE,LOW);
-    digitalWrite(RE,LOW);
-    for(byte i=0;i<7;i++){
-    //Serial.print(mod.read(),HEX);
-    values[i] = mod.read();
+    // Calculate the average of Percent_1 and Percent_2
+    int averageSoilMoisture = (soilMoisturePercent1 + soilMoisturePercentRealtime) / 2;
+
+
+    u8g2.clearBuffer();
+    u8g2.setFont(u8g2_font_ncenB08_tr);
+    u8g2.drawStr(0, 15, "Avg Moisture:");
+    u8g2.setCursor(95, 15);
+    u8g2.print(averageSoilMoisture);
+    u8g2.print(" %");
+
+    u8g2.sendBuffer();
+
+    // Watering logic based on the average soil moisture value
+    if (averageSoilMoisture <= 45) {
+      Serial.println("Watering plants immediately due to dryness.");
+      
+      // If Relay 2 has not been activated yet, turn it on for 15 seconds
+      if (!relay2Activated) {
+        digitalWrite(RELAY2_PIN, HIGH); // Turn on Relay 2 (first step)
+        delay(15000); // Keep Relay 2 on for 15 seconds
+        digitalWrite(RELAY2_PIN, LOW); // Turn off Relay 2
+        relay2Activated = true; // Set the flag to indicate Relay 2 has been activated
+        delay(5000); // Pause for 5 seconds before starting the next step
+      }
+
+      // Cycle process for Relay 1 (water pump)
+      for (int cycle = 0; cycle < 3; cycle++) {
+        digitalWrite(RELAY1_PIN, HIGH); // Turn the pump ON
+        delay(15000); // Keep the pump ON for 15 seconds
+        digitalWrite(RELAY1_PIN, LOW); // Turn the pump OFF
+        delay(5000); // Pause for 5 seconds
+        
+        // Recalculate the average soil moisture
+        averageSoilMoisture = (soilMoisturePercent1 + soilMoisturePercentRealtime) / 2;
+
+        // Check if soil moisture has reached the threshold
+        if (averageSoilMoisture >= 55) {
+          Serial.println("Soil moisture level has reached 55%. Stopping watering.");
+          break; // Exit the loop if moisture is sufficient
+        }
+      }
+    } else {
+      // If soil moisture is above 45%, reset relay2Activated flag
+      relay2Activated = false;
+      Serial.println("No watering needed.");
     }
   }
-  return values[4];
-}
- 
-byte phosphorous(){
-  digitalWrite(DE,HIGH);
-  digitalWrite(RE,HIGH);
-  delay(10);
-  if(mod.write(phos,sizeof(phos))==4){
-    digitalWrite(DE,LOW);
-    digitalWrite(RE,LOW);
-    for(byte i=0;i<7;i++){
-    //Serial.print(mod.read(),HEX);
-    values[i] = mod.read();
-    }
-  }
-  return values[4];
-}
- 
-byte potassium(){
-  digitalWrite(DE,HIGH);
-  digitalWrite(RE,HIGH);
-  delay(10);
-  if(mod.write(pota,sizeof(pota))==8){
-    digitalWrite(DE,LOW);
-    digitalWrite(RE,LOW);
-    for(byte i=0;i<7;i++){
-    //Serial.print(mod.read(),HEX);
-    values[i] = mod.read();
-    }
-  }
-  return values[4];
 }
