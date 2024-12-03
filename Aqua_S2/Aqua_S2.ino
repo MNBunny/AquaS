@@ -161,7 +161,7 @@ void loop() {
     u8g2.sendBuffer();
 
     // Watering logic based on the average soil moisture value
-    if (averageSoilMoisture <= 45) {
+    if (averageSoilMoisture <= 55) {
       Serial.println("Watering plants immediately due to dryness.");
       
       // If Relay 2 has not been activated yet, turn it on for 15 seconds
@@ -194,7 +194,7 @@ void loop() {
         averageSoilMoisture = (soilMoisturePercent1 + soilMoisturePercentRealtime) / 2;
 
         // Check if soil moisture has reached the threshold
-        if (averageSoilMoisture >= 55) {
+        if (averageSoilMoisture >= 60) {
           Serial.println("Soil moisture level has reached 55%. Stopping watering.");
           break; // Exit the loop if moisture is sufficient
         }
