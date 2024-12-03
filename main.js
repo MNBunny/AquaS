@@ -2,7 +2,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const menuIcon = document.querySelector('.menu-icon');
     const sidebar = document.getElementById('sidebar');
     const closeButton = document.querySelector('.close-button');
-  
+    const downloadButton = document.getElementById("download-button");
+
+    downloadButton.addEventListener("click", async function () {
+        console.log("Download button clicked");
+        await downloadData(); // Ensure downloadData is asynchronous
+    });
+
     menuIcon.addEventListener('click', function () {
         sidebar.classList.toggle('sidebar-responsive');
     });
@@ -291,32 +297,81 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   
   
-  
-  // Modify downloadData to include separate Date and Time columns
-  function downloadData() {
+  async function downloadData() {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "ID,Date,Time,Soil Moisture,Humidity,Temperature,Nitrogen,Phosphorus,Potassium\n";
-  
-    const types = ['moisture', 'humidity', 'temperature', 'nitrogen', 'phosphorus', 'potassium'];
-    const ids = [];  // Array to hold the IDs
-  
-    types.forEach(type => {
-        const dataRef = database.ref(`${type}/data`);
-        dataRef.once('value', (snapshot) => {
-            const dataRecords = snapshot.val();
-  
-            if (dataRecords) {
-                Object.entries(dataRecords).forEach(([id, data]) => {
-                    ids.push(id); // Collect IDs for download
-  
-                    const row = `${id},${data.date},${data.time},${data.value},${data.value || ''},${data.value || ''},${data.value || ''},${data.value || ''},${data.value || ''}`;
-                    csvContent += row + "\n";
-                });
-            }
-        });
+
+    // Regular Sensor Data Header
+    csvContent += "Regular Sensor Data\n";
+    csvContent += "ID,Date,Time,Moisture1,Moisture2,Humidity,Temperature\n";
+
+    const regularRows = {}; // Store regular sensor data by ID-Date-Time
+
+    // Fetch Regular Sensor Data
+    const regularTypes = ['moisture1', 'moisture2', 'humidity', 'temperature'];
+    for (const type of regularTypes) {
+        const snapshot = await database.ref(`${type}/data`).once('value');
+        const data = snapshot.val();
+
+        if (data) {
+            Object.entries(data).forEach(([id, record]) => {
+                const key = `${id}-${record.date}-${record.time}`;
+                if (!regularRows[key]) {
+                    regularRows[key] = {
+                        id,
+                        date: record.date,
+                        time: record.time,
+                        moisture1: '',
+                        moisture2: '',
+                        humidity: '',
+                        temperature: ''
+                    };
+                }
+                regularRows[key][type] = record.value;
+            });
+        }
+    }
+
+    // Add Regular Sensor Rows to CSV
+    Object.values(regularRows).forEach((row) => {
+        csvContent += `${row.id || ''},${row.date || ''},${row.time || ''},${row.moisture1 || ''},${row.moisture2 || ''},${row.humidity || ''},${row.temperature || ''}\n`;
     });
-  
-    // Create a link and trigger download
+
+    // NPK Data Header
+    csvContent += "\n\nNPK Sensor Data\n";
+    csvContent += "ID,Date,Time,Nitrogen,Phosphorus,Potassium\n";
+
+    const npkRows = {}; // Store NPK sensor data by ID-Date-Time
+
+    // Fetch NPK Data
+    const npkTypes = ['nitrogen', 'phosphorus', 'potassium'];
+    for (const type of npkTypes) {
+        const snapshot = await database.ref(`${type}/data`).once('value');
+        const data = snapshot.val();
+
+        if (data) {
+            Object.entries(data).forEach(([id, record]) => {
+                const key = `${id}-${record.date}-${record.time}`;
+                if (!npkRows[key]) {
+                    npkRows[key] = {
+                        id,
+                        date: record.date,
+                        time: record.time,
+                        nitrogen: '',
+                        phosphorus: '',
+                        potassium: ''
+                    };
+                }
+                npkRows[key][type] = record.value;
+            });
+        }
+    }
+
+    // Add NPK Sensor Rows to CSV
+    Object.values(npkRows).forEach((row) => {
+        csvContent += `${row.id || ''},${row.date || ''},${row.time || ''},${row.nitrogen || ''},${row.phosphorus || ''},${row.potassium || ''}\n`;
+    });
+
+    // Trigger Download
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -324,7 +379,4 @@ document.addEventListener("DOMContentLoaded", function () {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }
-  
-  // Call fetchHistoricalData on page load
-  fetchHistoricalData();
+}
