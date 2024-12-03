@@ -87,12 +87,13 @@ void setup() {
 }
 
 bool relay2Activated = false; // Flag to track if Relay 2 has been activated
+bool relay3Activated = false; // Flag to track if Relay 3 has been activated
 
 void loop() {
-  delay(600000); // Delay 20 minute between readings
+  delay(600000); // Delay 10 minutes between readings
 
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-  int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
+  int soilMoisturePercent = map(soilMoistureValue, 880, 340, 0, 100);
   soilMoisturePercent = constrain(soilMoisturePercent, 0, 100);
 
   if (Firebase.ready() && signupOK) {
@@ -120,13 +121,42 @@ void loop() {
     // Calculate the average of Percent_1 and Percent_2
     int averageSoilMoisture = (soilMoisturePercent1 + soilMoisturePercentRealtime) / 2;
 
+    // Read NPK values from Firebase
+    int nitrogen = 0;
+    int phosphorus = 0;
+    int potassium = 0;
 
+    if (Firebase.RTDB.getInt(&fbdo, "NPK/Nitrogen")) {
+      nitrogen = fbdo.intData();
+    }
+
+    if (Firebase.RTDB.getInt(&fbdo, "NPK/Phosphorus")) {
+      phosphorus = fbdo.intData();
+    }
+
+    if (Firebase.RTDB.getInt(&fbdo, "NPK/Potassium")) {
+      potassium = fbdo.intData();
+    }
+
+    // Clear the OLED and display the data
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_ncenB08_tr);
+
     u8g2.drawStr(0, 15, "Avg Moisture:");
     u8g2.setCursor(95, 15);
     u8g2.print(averageSoilMoisture);
     u8g2.print(" %");
+
+    // Display NPK values
+    u8g2.setCursor(0, 30);
+    u8g2.print("N: ");
+    u8g2.print(nitrogen);
+    u8g2.setCursor(0, 45);
+    u8g2.print("P: ");
+    u8g2.print(phosphorus);
+    u8g2.setCursor(0, 60);
+    u8g2.print("K: ");
+    u8g2.print(potassium);
 
     u8g2.sendBuffer();
 
@@ -140,6 +170,16 @@ void loop() {
         delay(15000); // Keep Relay 2 on for 15 seconds
         digitalWrite(RELAY2_PIN, LOW); // Turn off Relay 2
         relay2Activated = true; // Set the flag to indicate Relay 2 has been activated
+        delay(5000); // Pause for 5 seconds before starting the next step
+      }
+
+      // Check NPK value for Relay 3 operation
+      if (nitrogen >= 31 && nitrogen <= 34 && phosphorus >= 31 && phosphorus <= 34 && potassium >= 31 && potassium <= 34 && !relay3Activated) {
+        Serial.println("NPK values are in range. Activating Relay 3.");
+        digitalWrite(RELAY3_PIN, HIGH); // Turn on Relay 3 (for 5 seconds)
+        delay(5000); // Relay 3 runs for 5 seconds
+        digitalWrite(RELAY3_PIN, LOW); // Turn off Relay 3
+        relay3Activated = true; // Set the flag to indicate Relay 3 has been activated
         delay(5000); // Pause for 5 seconds before starting the next step
       }
 
@@ -162,6 +202,7 @@ void loop() {
     } else {
       // If soil moisture is above 45%, reset relay2Activated flag
       relay2Activated = false;
+      relay3Activated = false; // Reset Relay 3 activation flag
       Serial.println("No watering needed.");
     }
   }

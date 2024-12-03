@@ -155,7 +155,7 @@ void loop() {
 
   // Read soil moisture
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-  int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
+  int soilMoisturePercent = map(soilMoistureValue, 880, 340, 0, 100);
 
   // Display soil moisture on the OLED screen
   u8g2.setCursor(3, 62);
