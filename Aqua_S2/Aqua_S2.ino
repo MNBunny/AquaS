@@ -28,10 +28,10 @@ FirebaseConfig config;
 bool signupOK = false;
 
 // Pins definition
-#define RELAY1_PIN D5
-#define RELAY2_PIN D6
-#define RELAY3_PIN D7
-#define RELAY4_PIN D8
+#define RELAY1_PIN 14 // GPIO14 (D5)
+#define RELAY2_PIN 12 // GPIO12 (D6)
+#define RELAY3_PIN 13 // GPIO13 (D7)
+#define RELAY4_PIN 15 // GPIO15 (D8)
 #define SOIL_MOISTURE_PIN A0
 
 
@@ -79,15 +79,15 @@ void setup() {
   pinMode(RELAY3_PIN, OUTPUT);
   pinMode(RELAY4_PIN, OUTPUT);
 
-  // Initialize all relays to OFF
-  digitalWrite(RELAY1_PIN, LOW);
-  digitalWrite(RELAY2_PIN, LOW);
-  digitalWrite(RELAY3_PIN, LOW);
-  digitalWrite(RELAY4_PIN, LOW);
+  digitalWrite(RELAY1_PIN, HIGH);
+  digitalWrite(RELAY2_PIN, HIGH);
+  digitalWrite(RELAY3_PIN, HIGH);
+  digitalWrite(RELAY4_PIN, HIGH);
+
 }
 
 void loop() {
-  delay(600000); // Delay 10 minutes between readings
+  delay(60000); // Delay 10 minutes between readings
 
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
   int soilMoisturePercent = map(soilMoistureValue, 880, 340, 0, 100);
