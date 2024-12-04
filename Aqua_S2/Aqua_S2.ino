@@ -204,11 +204,6 @@ void loop() {
         delay(8000);  // Watering duration
         digitalWrite(RELAY1_PIN, HIGH);  // Close watering relay
         delay(5000);  // Pause before next cycle
-
-        // Update soil moisture after watering cycle
-        averageSoilMoisture = (soilMoisturePercent1 + soilMoisturePercent) / 2;
-        if (averageSoilMoisture >= 60) {
-          break;  // Stop watering if moisture is sufficient
         }
       }
     }
