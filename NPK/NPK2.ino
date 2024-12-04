@@ -28,10 +28,10 @@ FirebaseConfig config;
 bool signupOK = false;
 
 // Pins definition
-#define RELAY1_PIN D5
-#define RELAY2_PIN D6
-#define RELAY3_PIN D7
-#define RELAY4_PIN D8
+#define RELAY1_PIN 14 // GPIO14 (D5)
+#define RELAY2_PIN 12 // GPIO12 (D6)
+#define RELAY3_PIN 13 // GPIO13 (D7)
+#define RELAY4_PIN 15 // GPIO15 (D8)
 #define SOIL_MOISTURE_PIN A0
 
 
@@ -79,90 +79,76 @@ void setup() {
   pinMode(RELAY3_PIN, OUTPUT);
   pinMode(RELAY4_PIN, OUTPUT);
 
-  // Initialize all relays to OFF
-  digitalWrite(RELAY1_PIN, LOW);
-  digitalWrite(RELAY2_PIN, LOW);
-  digitalWrite(RELAY3_PIN, LOW);
-  digitalWrite(RELAY4_PIN, LOW);
+  digitalWrite(RELAY1_PIN, HIGH);
+  digitalWrite(RELAY2_PIN, HIGH);
+  digitalWrite(RELAY3_PIN, HIGH);
+  digitalWrite(RELAY4_PIN, HIGH);
+
 }
 
-bool relay2Activated = false; // Flag to track if Relay 2 has been activated
-
 void loop() {
-  delay(600000); // Delay 20 minute between readings
+  delay(60000); // Delay 10 minutes between readings
 
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-  int soilMoisturePercent = map(soilMoistureValue, 900, 393, 0, 100);
+  int soilMoisturePercent = map(soilMoistureValue, 880, 340, 0, 100);
   soilMoisturePercent = constrain(soilMoisturePercent, 0, 100);
 
   if (Firebase.ready() && signupOK) {
-    int soilMoisturePercentRealtime = 0;
-    int soilMoisturePercent1 = 0;
+    // Fetch data from Firebase
+    int soilMoisturePercent1 = 0, soilMoisturePercentRealtime = 0;
+    Firebase.RTDB.getInt(&fbdo, "SoilMoisture/Percent_1") ? soilMoisturePercent1 = fbdo.intData() : Serial.println("Failed to read Percent_1");
+    Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent) ? 
+      Serial.println("Updated Percent_2 in Firebase") : 
+      Serial.println("Failed to update Percent_2");
+    int averageSoilMoisture = (soilMoisturePercent1 + soilMoisturePercent) / 2;
 
-    // Read the soil moisture percentage for Percent_2
-    if (Firebase.RTDB.getInt(&fbdo, "SoilMoisture/Percent_2")) {
-      soilMoisturePercentRealtime = fbdo.intData();
-    }
-
-    // Read the soil moisture percentage for Percent_1
-    if (Firebase.RTDB.getInt(&fbdo, "SoilMoisture/Percent_1")) {
-      soilMoisturePercent1 = fbdo.intData();
-    }
-
-    // Send the current soil moisture data to Firebase
-    if (Firebase.RTDB.setInt(&fbdo, "SoilMoisture/Percent_2", soilMoisturePercent)) {
-      Serial.print("Soil Moisture Sent: ");
-      Serial.println(soilMoisturePercent);
-    } else {
-      Serial.println("Failed to send Soil Moisture reading.");
-    }
-
-    // Calculate the average of Percent_1 and Percent_2
-    int averageSoilMoisture = (soilMoisturePercent1 + soilMoisturePercentRealtime) / 2;
-
-
+    // Display data on OLED
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_ncenB08_tr);
     u8g2.drawStr(0, 15, "Avg Moisture:");
     u8g2.setCursor(95, 15);
     u8g2.print(averageSoilMoisture);
     u8g2.print(" %");
-
     u8g2.sendBuffer();
 
-    // Watering logic based on the average soil moisture value
-    if (averageSoilMoisture <= 45) {
-      Serial.println("Watering plants immediately due to dryness.");
-      
-      // If Relay 2 has not been activated yet, turn it on for 15 seconds
-      if (!relay2Activated) {
-        digitalWrite(RELAY2_PIN, HIGH); // Turn on Relay 2 (first step)
-        delay(15000); // Keep Relay 2 on for 15 seconds
-        digitalWrite(RELAY2_PIN, LOW); // Turn off Relay 2
-        relay2Activated = true; // Set the flag to indicate Relay 2 has been activated
-        delay(5000); // Pause for 5 seconds before starting the next step
+    // Watering logic
+    if (averageSoilMoisture <= 55) {
+      Serial.println("Low moisture detected, starting irrigation.");
+
+      // Step 1: Pre-watering (Relay 2)
+      digitalWrite(RELAY2_PIN, LOW);
+      delay(15000);
+      digitalWrite(RELAY2_PIN, HIGH);
+
+      // Step 2: Fertilizer check (Relay 3)
+      int nitrogen = 0, phosphorus = 0, potassium = 0;
+      Firebase.RTDB.getInt(&fbdo, "NPK/Nitrogen") ? nitrogen = fbdo.intData() : Serial.println("Failed to read Nitrogen");
+      Firebase.RTDB.getInt(&fbdo, "NPK/Phosphorus") ? phosphorus = fbdo.intData() : Serial.println("Failed to read Phosphorus");
+      Firebase.RTDB.getInt(&fbdo, "NPK/Potassium") ? potassium = fbdo.intData() : Serial.println("Failed to read Potassium");
+
+      if (nitrogen >= 31 && nitrogen <= 34 && phosphorus >= 31 && phosphorus <= 34 && potassium >= 31 && potassium <= 34) {
+        Serial.println("NPK values in range, activating fertilizer.");
+        digitalWrite(RELAY3_PIN, LOW);
+        delay(5000);
+        digitalWrite(RELAY3_PIN, HIGH);
       }
 
-      // Cycle process for Relay 1 (water pump)
+      // Step 3: Watering cycle (Relay 1)
       for (int cycle = 0; cycle < 3; cycle++) {
-        digitalWrite(RELAY1_PIN, HIGH); // Turn the pump ON
-        delay(15000); // Keep the pump ON for 15 seconds
-        digitalWrite(RELAY1_PIN, LOW); // Turn the pump OFF
-        delay(5000); // Pause for 5 seconds
-        
-        // Recalculate the average soil moisture
-        averageSoilMoisture = (soilMoisturePercent1 + soilMoisturePercentRealtime) / 2;
+        digitalWrite(RELAY1_PIN, LOW);
+        delay(15000);
+        digitalWrite(RELAY1_PIN, HIGH);
+        delay(5000);
 
-        // Check if soil moisture has reached the threshold
-        if (averageSoilMoisture >= 55) {
-          Serial.println("Soil moisture level has reached 55%. Stopping watering.");
-          break; // Exit the loop if moisture is sufficient
+        // Update soil moisture
+        averageSoilMoisture = (soilMoisturePercent1 + soilMoisturePercent) / 2;
+        if (averageSoilMoisture >= 60) {
+          Serial.println("Sufficient moisture achieved, stopping watering.");
+          break;
         }
       }
     } else {
-      // If soil moisture is above 45%, reset relay2Activated flag
-      relay2Activated = false;
-      Serial.println("No watering needed.");
+      Serial.println("Moisture adequate, no watering needed.");
     }
   }
 }
