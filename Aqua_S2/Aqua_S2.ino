@@ -152,13 +152,13 @@ void loop() {
 
       // Step 2: Pre-watering if moisture is low (Relay 2)
       digitalWrite(RELAY3_PIN, LOW);  // Open pre-watering relay
-      delay(11000);  // 15 seconds pre-watering
+      delay(10000);  // 15 seconds pre-watering
       digitalWrite(RELAY3_PIN, HIGH);  // Close pre-watering relay
 
       // Step 3: Watering cycle if moisture is low (Relay 1)
       for (int cycle = 0; cycle < 3; cycle++) {
         digitalWrite(RELAY1_PIN, LOW);  // Open watering relay
-        delay(15000);  // Watering duration
+        delay(25000);  // Watering duration
         digitalWrite(RELAY1_PIN, HIGH);  // Close watering relay
         delay(5000);  // Pause before next cycle
 
@@ -172,13 +172,13 @@ void loop() {
     } else if (moistureNeeded) {
       // Only moisture-related operations
       digitalWrite(RELAY3_PIN, LOW);  // Open pre-watering relay
-      delay(11000);  // 15 seconds pre-watering
+      delay(10000);  // 15 seconds pre-watering
       digitalWrite(RELAY3_PIN, HIGH);  // Close pre-watering relay
 
       // Watering cycle
       for (int cycle = 0; cycle < 3; cycle++) {
         digitalWrite(RELAY1_PIN, LOW);  // Open watering relay
-        delay(15000);  // Watering duration
+        delay(25000);  // Watering duration
         digitalWrite(RELAY1_PIN, HIGH);  // Close watering relay
         delay(5000);  // Pause before next cycle
 
@@ -198,13 +198,13 @@ void loop() {
 
       // Step 2: Pre-watering if moisture is low (Relay 2)
       digitalWrite(RELAY3_PIN, LOW);  // Open pre-watering relay
-      delay(11000);  // 15 seconds pre-watering
+      delay(10000);  // 15 seconds pre-watering
       digitalWrite(RELAY3_PIN, HIGH);  // Close pre-watering relay
 
       // Step 3: Watering cycle if moisture is low (Relay 1)
       for (int cycle = 0; cycle < 3; cycle++) {
         digitalWrite(RELAY1_PIN, LOW);  // Open watering relay
-        delay(15000);  // Watering duration
+        delay(25000);  // Watering duration
         digitalWrite(RELAY1_PIN, HIGH);  // Close watering relay
         delay(5000);  // Pause before next cycle
       
